@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Harvest Ledger — Crop Production, 2023–2024</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --paper:#F3ECD6;
+    --paper-deep:#EAE0C0;
+    --ink:#2A2115;
+    --ink-soft:#5B4E3A;
+    --ink-faint:#8A7C63;
+    --gold:#B4860B;
+    --gold-deep:#8A6708;
+    --indigo:#2F4374;
+    --indigo-soft:#5C71A0;
+    --green:#445E39;
+    --green-soft:#6C8760;
+    --rust:#8C4A2F;
+    --line: rgba(42,33,21,0.16);
+    --line-strong: rgba(42,33,21,0.32);
+    --shadow: 0 1px 0 rgba(42,33,21,0.08);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      repeating-linear-gradient(180deg, rgba(42,33,21,0.028) 0px, rgba(42,33,21,0.028) 1px, transparent 1px, transparent 34px),
+      var(--paper);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important;} }
+
+  .wrap{max-width:1180px; margin:0 auto; padding:0 28px;}
+
+  /* ---------- Header / Hero ---------- */
+  header.hero{
+    border-bottom: 2px solid var(--ink);
+    padding: 40px 0 22px;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    display:flex; align-items:center; gap:10px;
+    margin-bottom:14px;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);}
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:clamp(36px, 6vw, 60px);
+    line-height:1.02;
+    margin:0 0 12px;
+    letter-spacing:-.01em;
+  }
+  h1 em{font-style:italic; font-weight:500; color:var(--indigo);}
+  .hero-sub{
+    max-width:620px;
+    font-size:16px;
+    color:var(--ink-soft);
+    line-height:1.55;
+    margin:0 0 26px;
+  }
+  .kpi-row{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(150px,1fr));
+    border-top:1px solid var(--line-strong);
+  }
+  .kpi{
+    padding:16px 18px 4px 0;
+    border-right:1px solid var(--line);
+  }
+  .kpi:last-child{border-right:none;}
+  .kpi .num{
+    font-family:'Fraunces', serif;
+    font-size:32px;
+    font-weight:600;
+    color:var(--ink);
+    display:block;
+  }
+  .kpi .lbl{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--ink-faint);
+  }
+
+  /* ---------- Section shell ---------- */
+  section{padding:44px 0;border-bottom:1px solid var(--line);}
+  section:last-of-type{border-bottom:none;}
+  .sec-head{display:flex; align-items:baseline; justify-content:space-between; gap:20px; margin-bottom:22px; flex-wrap:wrap;}
+  .sec-head h2{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:24px;
+    margin:0;
+    display:flex; align-items:center; gap:10px;
+  }
+  .sec-head h2 .tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; font-weight:500;
+    color:var(--paper);
+    background:var(--ink);
+    padding:3px 8px; border-radius:2px;
+    letter-spacing:.04em;
+  }
+  .sec-note{font-size:13px; color:var(--ink-faint); max-width:340px; text-align:right;}
+
+  /* ---------- Filters ---------- */
+  .filters{
+    display:flex; flex-wrap:wrap; gap:22px; align-items:flex-end;
+    padding:18px 20px;
+    background:var(--paper-deep);
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    margin-bottom:30px;
+  }
+  .filter-group{display:flex; flex-direction:column; gap:8px;}
+  .filter-group .flabel{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft);
+  }
+  .chips{display:flex; flex-wrap:wrap; gap:6px;}
+  .chip{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    padding:6px 12px;
+    border:1px solid var(--ink);
+    border-radius:2px;
+    background:transparent;
+    color:var(--ink);
+    cursor:pointer;
+    transition:background .12s, color .12s;
+    user-select:none;
+  }
+  .chip[data-active="true"]{background:var(--ink); color:var(--paper);}
+  .chip:hover{background:var(--ink-soft); color:var(--paper);}
+  select{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    padding:7px 10px;
+    border:1px solid var(--ink);
+    border-radius:2px;
+    background:var(--paper);
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .reset-link{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--indigo);
+    background:none; border:none; text-decoration:underline;
+    cursor:pointer; padding:0; margin-left:auto;
+    align-self:center;
+  }
+
+  /* ---------- Charts grid ---------- */
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:26px;}
+  @media (max-width:820px){.grid2{grid-template-columns:1fr;}}
+  .panel{
+    border:1px solid var(--line-strong);
+    background:var(--paper);
+    padding:20px 20px 12px;
+    border-radius:3px;
+  }
+  .panel h3{
+    font-family:'Fraunces', serif;
+    font-size:16px; font-weight:600; margin:0 0 4px;
+  }
+  .panel .phint{font-size:12px; color:var(--ink-faint); margin:0 0 14px;}
+  .chart-box{position:relative; height:260px;}
+
+  /* ---------- Harvest calendar (signature element) ---------- */
+  .calendar-wrap{overflow-x:auto; border:1px solid var(--line-strong); border-radius:3px; background:var(--paper);}
+  table.calendar{border-collapse:collapse; width:100%; min-width:760px;}
+  table.calendar th, table.calendar td{padding:0; text-align:center;}
+  table.calendar thead th{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; color:var(--ink-soft); font-weight:500;
+    padding:10px 4px 8px;
+    border-bottom:1px solid var(--line-strong);
+  }
+  table.calendar thead th:first-child{text-align:left; padding-left:14px;}
+  table.calendar tbody th{
+    font-family:'Fraunces', serif;
+    font-size:13px; font-weight:600; text-align:left;
+    padding:6px 10px 6px 14px;
+    white-space:nowrap;
+    border-bottom:1px solid var(--line);
+    border-right:1px solid var(--line);
+  }
+  table.calendar tbody td{
+    border-bottom:1px solid var(--line);
+    padding:6px 4px;
+    vertical-align:bottom;
+  }
+  .tally{
+    width:100%;
+    height:42px;
+    display:flex; align-items:flex-end; justify-content:center;
+  }
+  .tally-bar{
+    width:9px;
+    border-radius:1px 1px 0 0;
+    background:var(--crop-color, var(--gold));
+    transition:height .25s ease;
+  }
+  .tally-count{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    color:var(--ink-faint);
+    display:block;
+    margin-top:2px;
+  }
+
+  /* ---------- Table ---------- */
+  .table-controls{display:flex; gap:12px; align-items:center; margin-bottom:14px; flex-wrap:wrap;}
+  input#search{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    padding:8px 12px;
+    border:1px solid var(--ink);
+    border-radius:2px;
+    background:var(--paper);
+    color:var(--ink);
+    min-width:220px;
+  }
+  input#search::placeholder{color:var(--ink-faint);}
+  .row-count{font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-faint); margin-left:auto;}
+  .table-wrap{border:1px solid var(--line-strong); border-radius:3px; overflow:auto; max-height:480px; background:var(--paper);}
+  table.data{width:100%; border-collapse:collapse; font-family:'IBM Plex Mono', monospace; font-size:12.5px;}
+  table.data thead th{
+    position:sticky; top:0;
+    background:var(--ink); color:var(--paper);
+    text-align:left; padding:10px 14px;
+    cursor:pointer; user-select:none;
+    font-weight:500; letter-spacing:.02em;
+    white-space:nowrap;
+  }
+  table.data thead th:hover{background:var(--indigo);}
+  table.data thead th .arrow{opacity:.5; margin-left:4px;}
+  table.data tbody td{padding:8px 14px; border-bottom:1px solid var(--line); white-space:nowrap;}
+  table.data tbody tr:hover{background:var(--paper-deep);}
+  table.data tbody tr:nth-child(even){background:rgba(42,33,21,0.02);}
+  .crop-swatch{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:7px; vertical-align:middle;}
+  .pager{display:flex; gap:10px; align-items:center; justify-content:center; padding:14px 0 2px;}
+  .pager button{
+    font-family:'IBM Plex Mono', monospace; font-size:12px;
+    border:1px solid var(--ink); background:transparent; color:var(--ink);
+    padding:6px 12px; border-radius:2px; cursor:pointer;
+  }
+  .pager button:disabled{opacity:.3; cursor:default;}
+  .pager span{font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-soft);}
+
+  footer{padding:30px 0 50px; font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-faint); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow"><span class="dot"></span>FIELD RECORDS · KHARIF &amp; RABI · 2023–2024</div>
+    <h1>The Harvest<br><em>Ledger</em></h1>
+    <p class="hero-sub">Five hundred and two entries from eleven states, logged the way a district agriculture office would keep them — by crop, by rain, by yield. Filter the book below to trace a single crop or state through two growing years.</p>
+    <div class="kpi-row" id="kpiRow"></div>
+  </header>
+
+  <section id="filters-section">
+    <div class="sec-head">
+      <h2><span class="tag">§1</span> Filter the Ledger</h2>
+      <p class="sec-note">Tap a crop to isolate its entries. Narrow further by state or growing year.</p>
+    </div>
+    <div class="filters">
+      <div class="filter-group">
+        <span class="flabel">Crop</span>
+        <div class="chips" id="cropChips"></div>
+      </div>
+      <div class="filter-group">
+        <span class="flabel">State</span>
+        <select id="stateSelect"><option value="__all__">All states</option></select>
+      </div>
+      <div class="filter-group">
+        <span class="flabel">Harvest Year</span>
+        <div class="chips" id="yearChips"></div>
+      </div>
+      <button class="reset-link" id="resetBtn">Reset filters</button>
+    </div>
+  </section>
+
+  <section id="charts-section">
+    <div class="sec-head">
+      <h2><span class="tag">§2</span> Yield &amp; Rainfall</h2>
+      <p class="sec-note">Recalculates live as the ledger is filtered above.</p>
+    </div>
+    <div class="grid2" style="margin-bottom:26px;">
+      <div class="panel">
+        <h3>Total yield by crop</h3>
+        <p class="phint">Tonnes harvested, summed across all matching entries</p>
+        <div class="chart-box"><canvas id="chartCrop"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Avg. yield per hectare by state</h3>
+        <p class="phint">Tonnes / hectare, averaged across matching entries</p>
+        <div class="chart-box"><canvas id="chartState"></canvas></div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>Rainfall vs. yield</h3>
+        <p class="phint">Each point is one harvest entry, coloured by crop</p>
+        <div class="chart-box"><canvas id="chartScatter"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Monthly harvest volume</h3>
+        <p class="phint">Entries logged per month, 2023 vs. 2024</p>
+        <div class="chart-box"><canvas id="chartMonth"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="calendar-section">
+    <div class="sec-head">
+      <h2><span class="tag">§3</span> The Harvest Calendar</h2>
+      <p class="sec-note">Tally marks — one bar's height is how often that crop was brought in that month.</p>
+    </div>
+    <div class="calendar-wrap">
+      <table class="calendar" id="calendarTable"></table>
+    </div>
+  </section>
+
+  <section id="table-section">
+    <div class="sec-head">
+      <h2><span class="tag">§4</span> Full Ledger</h2>
+      <p class="sec-note">Click a column heading to sort. Search across record ID, state, or crop.</p>
+    </div>
+    <div class="table-controls">
+      <input type="text" id="search" placeholder="Search record, state, or crop…">
+      <span class="row-count" id="rowCount"></span>
+    </div>
+    <div class="table-wrap">
+      <table class="data">
+        <thead>
+          <tr>
+            <th data-key="RecordID">Record<span class="arrow"></span></th>
+            <th data-key="State">State<span class="arrow"></span></th>
+            <th data-key="CropName">Crop<span class="arrow"></span></th>
+            <th data-key="HarvestDate">Harvest date<span class="arrow"></span></th>
+            <th data-key="AreaHectares">Area (ha)<span class="arrow"></span></th>
+            <th data-key="YieldTonnes">Yield (t)<span class="arrow"></span></th>
+            <th data-key="RainfallMM">Rainfall (mm)<span class="arrow"></span></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="pager">
+      <button id="prevPage">← Prev</button>
+      <span id="pageLabel"></span>
+      <button id="nextPage">Next →</button>
+    </div>
+  </section>
+
+  <footer>
+    <span>The Harvest Ledger — compiled from CropProduction.xlsx, 502 records, 2023–2024.</span>
+    <span>States shown as recorded; entries with blank fields excluded from averages.</span>
+  </footer>
+</div>
+
+<script id="raw-data" type="application/json">[{"RecordID": "CRP0017", "State": "Uttar Pradesh", "CropName": "Wheat", "HarvestDate": "2023-10-12", "AreaHectares": 1981, "YieldTonnes": 1971.3, "RainfallMM": 244}, {"RecordID": "CRP0081", "State": "Karnataka", "CropName": "Wheat", "HarvestDate": "2024-06-15", "AreaHectares": 4288, "YieldTonnes": 4266.3, "RainfallMM": 277}, {"RecordID": "CRP0186", "State": "Karnataka", "CropName": "Sugarcane", "HarvestDate": "2024-02-18", "AreaHectares": 1158, "YieldTonnes": 515.6, "RainfallMM": 1052}, {"RecordID": "CRP0327", "State": "West Bengal", "CropName": "Wheat", "HarvestDate": "2024-04-03", "AreaHectares": 2830, "YieldTonnes": 1477.0, "RainfallMM": 2274}, {"RecordID": "CRP0419", "State": "Tamil Nadu", "CropName": "Maize", "HarvestDate": "2024-12-13", "AreaHectares": 4581, "YieldTonnes": 324.2, "RainfallMM": 827}, {"RecordID": "CRP0498", "State": "Rajasthan", "CropName": "Cotton", "HarvestDate": "2023-02-06", "AreaHectares": 1164, "YieldTonnes": 2670.4, "RainfallMM": 1866}, {"RecordID": "CRP0127", "State": "Maharashtra", "CropName": "Wheat", "HarvestDate": "2024-04-26", "AreaHectares": 4817, "YieldTonnes": 1796.8, "RainfallMM": 710}, {"RecordID": "CRP0165", "State": "Delhi", "CropName": "Cotton", "HarvestDate": "2023-10-09", "AreaHectares": 4953, "YieldTonnes": 2501.4, "RainfallMM": 2444}, {"RecordID": "CRP0333", "State": "Delhi", "CropName": "Sugarcane", "HarvestDate": "2024-01-19", "AreaHectares": 3003, "YieldTonnes": 952.9, "RainfallMM": 284}, {"RecordID": "CRP0131", "State": "Gujarat", "CropName": "Wheat", "HarvestDate": "2023-04-02", "AreaHectares": 3183, "YieldTonnes": 1115.6, "RainfallMM": 591}, {"RecordID": "CRP0128", "State": "Karnataka", "CropName": "Cotton", "HarvestDate": "2024-09-08", "AreaHectares": 1771, "YieldTonnes": 163.7, "RainfallMM": 1707}, {"RecordID": "CRP0162", "State": "West Bengal", "CropName": "Cotton", "HarvestDate": "2024-10-09", "AreaHectares": 3982, "YieldTonnes": 2070.0, "RainfallMM": 2334}, {"RecordID": "CRP0074", "State": "Delhi", "CropName": "Pulses", "HarvestDate": "2024-08-07", "AreaHectares": 4917, "YieldTonnes": 2084.2, "RainfallMM": 742}, {"RecordID": "CRP0455", "State": "Delhi", "CropName": "Sugarcane", "HarvestDate": "2023-10-20", "AreaHectares": 1664, "YieldTonnes": 2437.3, "RainfallMM": 263}, {"RecordID": "CRP0228", "State": "Maharashtra", "CropName": "Wheat", "HarvestDate": "2024-08-15", "AreaHectares": 898, "YieldTonnes": 989.4, "RainfallMM": 2370}, {"RecordID": "CRP0273", "State": "Uttar Pradesh", "CropName": "Rice", "HarvestDate": "2024-06-27", "AreaHectares": 3378, "YieldTonnes": 1255.7, "RainfallMM": 1791}, {"RecordID": "CRP0156", "State": "Gujarat", "CropName": "Rice", "HarvestDate": "2023-01-23", "AreaHectares": 294, "YieldTonnes": 1219.5, "RainfallMM": 1981}, {"RecordID": "CRP0324", "State": "Karnataka", "CropName": "Maize", "HarvestDate": "2024-06-27", "AreaHectares": 4388, "YieldTonnes": 1882.6, "RainfallMM": 376}, {"RecordID": "CRP0190", "State": "Punjab", "CropName": "Sugarcane", "HarvestDate": "2024-02-28", "AreaHectares": 3895, "YieldTonnes": 1994.3, "RainfallMM": 2479}, {"RecordID": "CRP0212", "State": "Maharashtra", "CropName": "Rice", "HarvestDate": "2024-06-04", "AreaHectares": 4626, "YieldTonnes": 2156.6, "RainfallMM": 2467}, {"RecordID": "CRP0171", "State": "West Bengal", "CropName": "Pulses", "HarvestDate": "2023-04-14", "AreaHectares": 2191, "YieldTonnes": 731.6, "RainfallMM": 1817}, {"RecordID": "CRP0015", "State": "Delhi", "CropName": "Maize", "HarvestDate": "2024-07-06", "AreaHectares": 3315, "YieldTonnes": 2744.1, "RainfallMM": 2203}, {"RecordID": "CRP0456", "State": "West Bengal", "CropName": "Wheat", "HarvestDate": "2023-07-21", "AreaHectares": 4227, "YieldTonnes": 1078.9, "RainfallMM": 659}, {"RecordID": "CRP0476", "State": "Punjab", "CropName": "Cotton", "HarvestDate": "2024-05-17", "AreaHectares": 4810, "YieldTonnes": 1245.8, "RainfallMM": 683}, {"RecordID": "CRP0088", "State": "Tamil Nadu", "CropName": "Wheat", "HarvestDate": "2023-02-08", "AreaHectares": 4711, "YieldTonnes": 1448.3, "RainfallMM": 701}, {"RecordID": "CRP0280", "State": "Delhi", "CropName": "Wheat", "HarvestDate": "2023-04-25", "AreaHectares": 1367, "YieldTonnes": 2691.4, "RainfallMM": 1489}, {"RecordID": "CRP0028", "State": "Punjab", "CropName": "Maize", "HarvestDate": "2023-10-29", "AreaHectares": 3705, "YieldTonnes": 1648.6, "RainfallMM": 474}, {"RecordID": "CRP0125", "State": "Karnataka", "CropName": "Wheat", "HarvestDate": "2023-02-10", "AreaHectares": 4189, "YieldTonnes": 1148.9, "RainfallMM": 1545}, {"RecordID": "CRP0210", "State": "Delhi", "CropName": "Cotton", "HarvestDate": "2023-08-22", "AreaHectares": 3139, "YieldTonnes": 133.0, "RainfallMM": 334}, {"RecordID": "CRP0473", "State": "Tamil Nadu", "CropName": "Cotton", "HarvestDate": "2023-09-20", "AreaHectares": 192, "YieldTonnes": 2989.5, "RainfallMM": 714}, {"RecordID": "CRP0202", "State": "Uttar Pradesh", "CropName": "Sugarcane", "HarvestDate": "2024-09-13", "AreaHectares": 830, "YieldTonnes": 292.6, "RainfallMM": 1974}, {"RecordID": "CRP0467", "State": "Tamil Nadu", "CropName": "Maize", "HarvestDate": "2023-08-18", "AreaHectares": 1084, "YieldTonnes": 1393.2, "RainfallMM": 687}, {"RecordID": "CRP0240", "State": "Maharashtra", "CropName": "Wheat", "HarvestDate": "2024-08-11", "AreaHectares": 378, "YieldTonnes": 1483.3, "RainfallMM": 1851}, {"RecordID": "CRP0112", "State": "Punjab", "CropName": "Pulses", "HarvestDate": "2024-09-11", "AreaHectares": 4371, "YieldTonnes": 963.1, "RainfallMM": 1258}, {"RecordID": "CRP0154", "State": "Delhi", "CropName": "Maize", "HarvestDate": "2023-04-22", "AreaHectares": 664, "YieldTonnes": 582.4, "RainfallMM": 1617}, {"RecordID": "CRP0038", "State": "Maharashtra", "CropName": "Sugarcane", "HarvestDate": "2024-12-08", "AreaHectares": 3376, "YieldTonnes": 2686.0, "RainfallMM": 1031}, {"RecordID": "CRP0104", "State": "Rajasthan", "CropName": "Pulses", "HarvestDate": "2023-12-26", "AreaHectares": 2701, "YieldTonnes": 2500.5, "RainfallMM": 1647}, {"RecordID": "CRP0231", "State": "West Bengal", "CropName": "Maize", "HarvestDate": "2024-08-11", "AreaHectares": 3832, "YieldTonnes": 15.1, "RainfallMM": 910}, {"RecordID": "CRP0350", "State": "Rajasthan", "CropName": "Pulses", "HarvestDate": "2023-10-06", "AreaHectares": 1271, "YieldTonnes": 1633.7, "RainfallMM": 2392}, {"RecordID": "CRP0297", "State": "Tamil Nadu", "CropName": "Maize", "HarvestDate": "2024-12-11", "AreaHectares": 3344, "YieldTonnes": 1870.0, "RainfallMM": 890}, {"RecordID": "CRP0288", "State": "Tamil Nadu", "CropName": "Wheat", "HarvestDate": "2024-07-05", "AreaHectares": 623, "YieldTonnes": 2640.1, "RainfallMM": 739}, {"RecordID": "CRP0215", "State": "Gujarat", "CropName": "Rice", "HarvestDate": "2024-05-20", "AreaHectares": 3410, "YieldTonnes": 2062.8, "RainfallMM": 1825}, {"RecordID": "CRP0359", "State": "Punjab", "CropName": "Pulses", "HarvestDate": "2024-12-14", "AreaHectares": 3323, "YieldTonnes": 1707.9, "RainfallMM": 829}, {"RecordID": "CRP0449", "State": "Telangana", "CropName": "Rice", "HarvestDate": "2023-11-10", "AreaHectares": 3280, "YieldTonnes": 2263.8, "RainfallMM": 455}, {"RecordID": "CRP0375", "State": "Tamil Nadu", "CropName": "Sugarcane", "HarvestDate": "2023-11-28", "AreaHectares": 2524, "YieldTonnes": 2528.4, "RainfallMM": 2430}, {"RecordID": "CRP0302", "State": "Delhi", "CropName": "Maize", "HarvestDate": "2023-03-25", "AreaHectares": 54, "YieldTonnes": 1660.4, "RainfallMM": 857}, {"RecordID": "CRP0340", "State": "Uttar Pradesh", "CropName": "Cotton", "HarvestDate": "2024-03-01", "AreaHectares": 3488, "YieldTonnes": 2815.6, "RainfallMM": 1494}, {"RecordID": "CRP0058", "State": "Gujarat", "CropName": "Pulses", "HarvestDate": "2023-01-25", "AreaHectares": 4099, "YieldTonnes": 2778.8, "RainfallMM": 1023}, {"RecordID": "CRP0356", "State": "Telangana", "CropName": "Wheat", "HarvestDate": "2023-05-19", "AreaHectares": 2313, "YieldTonnes": 482.9, "RainfallMM": 2058}, {"RecordID": "CRP0252", "State": "Punjab", "CropName": "Pulses", "HarvestDate": "2023-10-24", "AreaHectares": 568, "YieldTonnes": 1181.7, "RainfallMM": 643}, {"RecordID": "CRP0305", "State": "Haryana", "CropName": "Maize", "HarvestDate": "2024-09-07", "AreaHectares": 4570, "YieldTonnes": 221.5, "RainfallMM": 294}, {"RecordID": "CRP0108", "State": "Telangana", "CropName": "Sugarcane", "HarvestDate": "2023-01-20", "AreaHectares": 4914, "YieldTonnes": 1845.5, "RainfallMM": 209}, {"RecordID": "CRP0271", "State": "Uttar Pradesh", "CropName": "Maize", "HarvestDate": "2023-07-30", "AreaHectares": 4432, "YieldTonnes": 2258.9, "RainfallMM": 2258}, {"RecordID": "CRP0334", "State": "Telangana", "CropName": "Sugarcane", "HarvestDate": "2024-10-30", "AreaHectares": 4997, "YieldTonnes": 2327.6, "RainfallMM": 1106}, {"RecordID": "CRP0346", "State": "Maharashtra", "CropName": "Cotton", "HarvestDate": "2024-04-01", "AreaHectares": 3498, "YieldTonnes": 1783.9, "RainfallMM": 822}, {"RecordID": "CRP0352", "State": "West Bengal", "CropName": "Maize", "HarvestDate": "2023-12-30", "AreaHectares": 3660, "YieldTonnes": 959.5, "RainfallMM": 345}, {"RecordID": "CRP0411", "State": "Haryana", "CropName": "Rice", "HarvestDate": "2024-04-05", "AreaHectares": 427, "YieldTonnes": 299.4, "RainfallMM": 1076}, {"RecordID": "CRP0204", "State": "Punjab", "CropName": "Rice", "HarvestDate": "2023-09-15", "AreaHectares": 2534, "YieldTonnes": 1371.4, "RainfallMM": 917}, {"RecordID": "CRP0140", "State": "Gujarat", "CropName": "Wheat", "HarvestDate": "2024-11-28", "AreaHectares": 3051, "YieldTonnes": 857.3, "RainfallMM": 1266}, {"RecordID": "CRP0137", "State": "Delhi", "CropName": "Pulses", "HarvestDate": "2024-01-29", "AreaHectares": 4246, "YieldTonnes": 2396.2, "RainfallMM": 1663}, {"RecordID": "CRP0283", "State": "Karnataka", "CropName": "Rice", "HarvestDate": "2024-07-04", "AreaHectares": 1955, "YieldTonnes": 1117.8, "RainfallMM": 1319}, {"RecordID": "CRP0343", "State": "Uttar Pradesh", "CropName": "Maize", "HarvestDate": "2024-11-08", "AreaHectares": 141, "YieldTonnes": 2018.9, "RainfallMM": 527}, {"RecordID": "CRP0197", "State": "Karnataka", "CropName": "Wheat", "HarvestDate": "2024-03-05", "AreaHectares": 2226, "YieldTonnes": 2860.9, "RainfallMM": 1108}, {"RecordID": "CRP0289", "State": "Maharashtra", "CropName": "Sugarcane", "HarvestDate": "2024-08-08", "AreaHectares": 115, "YieldTonnes": 2781.2, "RainfallMM": 1315}, {"RecordID": "CRP0211", "State": "Gujarat", "CropName": "Rice", "HarvestDate": "2023-07-09", "AreaHectares": 4024, "YieldTonnes": 1230.4, "RainfallMM": 731}, {"RecordID": "CRP0238", "State": "West Bengal", "CropName": "Wheat", "HarvestDate": "2023-01-21", "AreaHectares": 1320, "YieldTonnes": 1620.2, "RainfallMM": 1758}, {"RecordID": "CRP0176", "State": "Karnataka", "CropName": "Pulses", "HarvestDate": "2023-06-10", "AreaHectares": 2986, "YieldTonnes": 2609.0, "RainfallMM": 1588}, {"RecordID": "CRP0041", "State": "Tamil Nadu", "CropName": "Sugarcane", "HarvestDate": "2024-03-05", "AreaHectares": 4977, "YieldTonnes": 1087.9, "RainfallMM": 2328}, {"RecordID": "CRP0052", "State": "Delhi", "CropName": "Rice", "HarvestDate": "2023-11-20", "AreaHectares": 1446, "YieldTonnes": 155.1, "RainfallMM": 1840}, {"RecordID": "CRP0082", "State": "Uttar Pradesh", "CropName": "Pulses", "HarvestDate": "2023-09-21", "AreaHectares": 3955, "YieldTonnes": 988.0, "RainfallMM": 639}, {"RecordID": "CRP0391", "State": "Delhi", "CropName": "Rice", "HarvestDate": "2024-11-01", "AreaHectares": 3011, "YieldTonnes": 1304.8, "RainfallMM": 670}, {"RecordID": "CRP0044", "State": "Rajasthan", "CropName": "Maize", "HarvestDate": "2023-01-10", "AreaHectares": 3339, "YieldTonnes": 1823.1, "RainfallMM": 2074}, {"RecordID": "CRP0378", "State": "Karnataka", "CropName": "Wheat", "HarvestDate": "2024-02-03", "AreaHectares": 3666, "YieldTonnes": 2202.3, "RainfallMM": 807}, {"RecordID": "CRP0470", "State": "Rajasthan", "CropName": "Wheat", "HarvestDate": "2024-04-23", "AreaHectares": 49, "YieldTonnes": 1813.7, "RainfallMM": 727}, {"RecordID": "CRP0103", "State": "Delhi", "CropName": "Pulses", "HarvestDate": "2024-03-27", "AreaHectares": 3138, "YieldTonnes": 2207.4, "RainfallMM": 1302}, {"RecordID": "CRP0374", "State": "Delhi", "CropName": "Maize", "HarvestDate": "2024-04-14", "AreaHectares": 315, "YieldTonnes": 29.1, "RainfallMM": 1282}, {"RecordID": "CRP0458", "State": "Karnataka", "CropName": "Sugarcane", "HarvestDate": "2024-01-05", "AreaHectares": 1031, "YieldTonnes": 280.4, "RainfallMM": 1242}, {"RecordID": "CRP0067", "State": "Maharashtra", "CropName": "Pulses", "HarvestDate": "2024-10-06", "AreaHectares": 1277, "YieldTonnes": 2266.7, "RainfallMM": 1682}, {"RecordID": "CRP0225", "State": "Karnataka", "CropName": "Cotton", "HarvestDate": "2024-09-01", "AreaHectares": 3427, "YieldTonnes": 1395.5, "RainfallMM": 2495}, {"RecordID": "CRP0344", "State": "Karnataka", "CropName": "Wheat", "HarvestDate": "2024-05-15", "AreaHectares": 1867, "YieldTonnes": 787.4, "RainfallMM": 2035}, {"RecordID": "CRP0226", "State": "Delhi", "CropName": "Pulses", "HarvestDate": "2024-12-28", "AreaHectares": 4124, "YieldTonnes": 233.3, "RainfallMM": 241}, {"RecordID": "CRP0444", "State": "Karnataka", "CropName": "Rice", "HarvestDate": "2024-10-13", "AreaHectares": 601, "YieldTonnes": 2858.7, "RainfallMM": 2387}, {"RecordID": "CRP0453", "State": "Punjab", "CropName": "Wheat", "HarvestDate": "2024-10-18", "AreaHectares": 3858, "YieldTonnes": 745.4, "RainfallMM": 1751}, {"RecordID": "CRP0331", "State": "West Bengal", "CropName": "Cotton", "HarvestDate": "2023-01-27", "AreaHectares": 350, "YieldTonnes": 881.1, "RainfallMM": 444}, {"RecordID": "CRP0016", "State": "Telangana", "CropName": "Cotton", "HarvestDate": "2023-09-27", "AreaHectares": 1174, "YieldTonnes": 1259.5, "RainfallMM": 457}, {"RecordID": "CRP0113", "State": "Uttar Pradesh", "CropName": "Sugarcane", "HarvestDate": "2023-05-26", "AreaHectares": 3733, "YieldTonnes": 1423.2, "RainfallMM": 2422}, {"RecordID": "CRP0248", "State": "Rajasthan", "CropName": "Sugarcane", "HarvestDate": "2023-08-29", "AreaHectares": 69, "YieldTonnes": 1498.1, "RainfallMM": 1849}, {"RecordID": "CRP0145", "State": "Telangana", "CropName": "Rice", "HarvestDate": "2024-11-22", "AreaHectares": 4301, "YieldTonnes": 2024.3, "RainfallMM": 1761}, {"RecordID": "CRP0370", "State": "Karnataka", "CropName": "Maize", "HarvestDate": "2024-12-09", "AreaHectares": 2709, "YieldTonnes": 198.5, "RainfallMM": 299}, {"RecordID": "CRP0068", "State": "Gujarat", "CropName": "Maize", "HarvestDate": "2024-07-05", "AreaHectares": 4020, "YieldTonnes": 1792.9, "RainfallMM": 1803}, {"RecordID": "CRP0102", "State": "Uttar Pradesh", "CropName": "Rice", "HarvestDate": "2024-07-02", "AreaHectares": 3644, "YieldTonnes": 264.0, "RainfallMM": 1046}, {"RecordID": "CRP0187", "State": "Rajasthan", "CropName": "Cotton", "HarvestDate": "2023-11-11", "AreaHectares": 4976, "YieldTonnes": 2557.2, "RainfallMM": 2437}, {"RecordID": "CRP0135", "State": "Tamil Nadu", "CropName": "Wheat", "HarvestDate": "2024-11-14", "AreaHectares": 2848, "YieldTonnes": 870.0, "RainfallMM": 315}, {"RecordID": "CRP0330", "State": "Telangana", "CropName": "Cotton", "HarvestDate": "2023-04-30", "AreaHectares": 1430, "YieldTonnes": 2692.0, "RainfallMM": 469}, {"RecordID": "CRP0427", "State": "Tamil Nadu", "CropName": "Pulses", "HarvestDate": "2024-07-23", "AreaHectares": 922, "YieldTonnes": 2355.4, "RainfallMM": 2433}, {"RecordID": "CRP0398", "State": "West Bengal", "CropName": "Pulses", "HarvestDate": "2023-12-13", "AreaHectares": 3532, "YieldTonnes": 2839.6, "RainfallMM": 1287}, {"RecordID": "CRP0477", "State": "Rajasthan", "CropName": "Wheat", "HarvestDate": "2023-04-19", "AreaHectares": 506, "YieldTonnes": 1508.9, "RainfallMM": 651}, {"RecordID": "CRP0270", "State": "Gujarat", "CropName": "Sugarcane", "HarvestDate": "2024-04-26", "AreaHectares": 3499, "YieldTonnes": 162.2, "RainfallMM": 583}, {"RecordID": "CRP0256", "State": "Karnataka", "CropName": "Maize", "HarvestDate": "2024-07-27", "AreaHectares": 1080, "YieldTonnes": 2135.1, "RainfallMM": 1583}, {"RecordID": "CRP0422", "State": "Gujarat", "CropName": "Wheat", "HarvestDate": "2024-02-03", "AreaHectares": 1086, "YieldTonnes": 1840.4, "RainfallMM": 2477}, {"RecordID": "CRP0329", "State": "Rajasthan", "CropName": "Cotton", "HarvestDate": "2024-08-11", "AreaHectares": 248, "YieldTonnes": 2987.3, "RainfallMM": 860}, {"RecordID": "CRP0138", "State": "Delhi", "CropName": "Cotton", "HarvestDate": "2023-12-28", "AreaHectares": 2463, "YieldTonnes": 2327.4, "RainfallMM": 1247}, {"RecordID": "CRP0403", "State": "Delhi", "CropName": "Wheat", "HarvestDate": "2024-12-26", "AreaHectares": 3622, "YieldTonnes": 1591.5, "RainfallMM": 2191}, {"RecordID": "CRP0311", "State": "West Bengal", "CropName": "Pulses", "HarvestDate": "2023-05-10", "AreaHectares": 2640, "YieldTonnes": 185.9, "RainfallMM": 1195}, {"RecordID": "CRP0362", "State": "Tamil Nadu", "CropName": "Cotton", "HarvestDate": "2024-01-13", "AreaHectares": 2170, "YieldTonnes": 2104.4, "RainfallMM": 1104}, {"RecordID": "CRP0249", "State": "Tamil Nadu", "CropName": "Wheat", "HarvestDate": "2024-08-16", "AreaHectares": 554, "YieldTonnes": 1406.0, "RainfallMM": 2093}, {"RecordID": "CRP0437", "State": "Delhi", "CropName": "Sugarcane", "HarvestDate": "2023-01-24", "AreaHectares": 208, "YieldTonnes": 2706.9, "RainfallMM": 499}, {"RecordID": "CRP0117", "State": "Telangana", "CropName": "Rice", "HarvestDate": "2023-05-18", "AreaHectares": 4013, "YieldTonnes": 2081.7, "RainfallMM": 2493}, {"RecordID": "CRP0390", "State": "Maharashtra", "CropName": "Sugarcane", "HarvestDate": "2024-11-16", "AreaHectares": 1862, "YieldTonnes": 2706.9, "RainfallMM": 1414}, {"RecordID": "CRP0321", "State": "Delhi", "CropName": "Rice", "HarvestDate": "2024-08-16", "AreaHectares": 1630, "YieldTonnes": 1793.4, "RainfallMM": 1207}, {"RecordID": "CRP0160", "State": "Maharashtra", "CropName": "Cotton", "HarvestDate": "2023-09-20", "AreaHectares": 2284, "YieldTonnes": 1594.6, "RainfallMM": 1212}, {"RecordID": "CRP0394", "State": "Tamil Nadu", "CropName": "Sugarcane", "HarvestDate": "2024-11-20", "AreaHectares": 812, "YieldTonnes": 421.1, "RainfallMM": 309}, {"RecordID": "CRP0396", "State": "Karnataka", "CropName": "Sugarcane", "HarvestDate": "2023-08-04", "AreaHectares": 1690, "YieldTonnes": 1482.9, "RainfallMM": 1093}, {"RecordID": "CRP0219", "State": "Rajasthan", "CropName": "Rice", "HarvestDate": "2023-10-06", "AreaHectares": 3960, "YieldTonnes": 1402.5, "RainfallMM": 1908}, {"RecordID": "CRP0408", "State": "Gujarat", "CropName": "Pulses", "HarvestDate": "2023-08-09", "AreaHectares": 3014, "YieldTonnes": 469.5, "RainfallMM": 1826}, {"RecordID": "CRP0084", "State": "West Bengal", "CropName": "Sugarcane", "HarvestDate": "2023-02-20", "AreaHectares": 966, "YieldTonnes": 1107.9, "RainfallMM": 1416}, {"RecordID": "CRP0245", "State": "Gujarat", "CropName": "Wheat", "HarvestDate": "2024-07-11", "AreaHectares": 1828, "YieldTonnes": 164.0, "RainfallMM": 2494}, {"RecordID": "CRP0242", "State": "Punjab", "CropName": "Wheat", "HarvestDate": "2023-11-13", "AreaHectares": 2859, "YieldTonnes": 810.8, "RainfallMM": 1978}, {"RecordID": "CRP0315", "State": "Gujarat", "CropName": "Maize", "HarvestDate": "2024-10-26", "AreaHectares": 3303, "YieldTonnes": 612.9, "RainfallMM": 2324}, {"RecordID": "CRP0062", "State": "Delhi", "CropName": "Sugarcane", "HarvestDate": "2024-10-04", "AreaHectares": 4572, "YieldTonnes": 2996.5, "RainfallMM": 505}, {"RecordID": "CRP0435", "State": "Gujarat", "CropName": "Rice", "HarvestDate": "2024-03-12", "AreaHectares": 1908, "YieldTonnes": 658.7, "RainfallMM": 2409}, {"RecordID": "CRP0348", "State": "Delhi", "CropName": "Pulses", "HarvestDate": "2024-05-07", "AreaHectares": 514, "YieldTonnes": 2480.8, "RainfallMM": 2241}, {"RecordID": "CRP0133", "State": "Uttar Pradesh", "CropName": "Sugarcane", "HarvestDate": "2023-04-25", "AreaHectares": 2513, "YieldTonnes": 522.4, "RainfallMM": 2463}, {"RecordID": "CRP0178", "State": "Telangana", "CropName": "Pulses", "HarvestDate": "2023-09-11", "AreaHectares": 2923, "YieldTonnes": 2918.9, "RainfallMM": 471}, {"RecordID": "CRP0060", "State": "Maharashtra", "CropName": "Pulses", "HarvestDate": "2023-08-18", "AreaHectares": 1812, "YieldTonnes": 318.5, "RainfallMM": 1652}, {"RecordID": "CRP0205", "State": "Telangana", "CropName": "Wheat", "HarvestDate": "2024-11-30", "AreaHectares": 4950, "YieldTonnes": 1233.6, "RainfallMM": 1169}, {"RecordID": "CRP0106", "State": "Gujarat", "CropName": "Maize", "HarvestDate": "2024-01-05", "AreaHectares": 2972, "YieldTonnes": 1718.1, "RainfallMM": 1879}, {"RecordID": "CRP0011", "State": "Telangana", "CropName": "Cotton", "HarvestDate": "2023-04-12", "AreaHectares": 3788, "YieldTonnes": 947.8, "RainfallMM": 1628}, {"RecordID": "CRP0056", "State": "Uttar Pradesh", "CropName": "Cotton", "HarvestDate": "2023-09-06", "AreaHectares": 458, "YieldTonnes": 849.3, "RainfallMM": 349}, {"RecordID": "CRP0459", "State": "Uttar Pradesh", "CropName": "Wheat", "HarvestDate": "2023-02-17", "AreaHectares": 2003, "YieldTonnes": 1728.3, "RainfallMM": 1548}, {"RecordID": "CRP0443", "State": "Delhi", "CropName": "Sugarcane", "HarvestDate": "2023-02-01", "AreaHectares": 1664, "YieldTonnes": 1782.1, "RainfallMM": 1390}, {"RecordID": "CRP0057", "State": "Karnataka", "CropName": "Rice", "HarvestDate": "2023-02-06", "AreaHectares": 77, "YieldTonnes": 661.1, "RainfallMM": 2363}, {"RecordID": "CRP0366", "State": "Rajasthan", "CropName": "Maize", "HarvestDate": "2023-10-16", "AreaHectares": 887, "YieldTonnes": 34.6, "RainfallMM": 1588}, {"RecordID": "CRP0167", "State": "West Bengal", "CropName": "Wheat", "HarvestDate": "2024-05-10", "AreaHectares": 4123, "YieldTonnes": 442.8, "RainfallMM": 1341}, {"RecordID": "CRP0089", "State": "Rajasthan", "CropName": "Maize", "HarvestDate": "2023-01-24", "AreaHectares": 506, "YieldTonnes": 2934.0, "RainfallMM": 586}, {"RecordID": "CRP0272", "State": "Rajasthan", "CropName": "Wheat", "HarvestDate": "2024-04-08", "AreaHectares": 1424, "YieldTonnes": 2950.6, "RainfallMM": 1085}, {"RecordID": "CRP0025", "State": "Punjab", "CropName": "Maize", "HarvestDate": "2023-03-23", "AreaHectares": 3869, "YieldTonnes": 2668.6, "RainfallMM": 1668}, {"RecordID": "CRP0115", "State": "Gujarat", "CropName": "Rice", "HarvestDate": "2024-02-10", "AreaHectares": 185, "YieldTonnes": 1295.8, "RainfallMM": 1792}, {"RecordID": "CRP0402", "State": "Telangana", "CropName": "Wheat", "HarvestDate": "2023-01-04", "AreaHectares": 2573, "YieldTonnes": 1813.4, "RainfallMM": 2228}, {"RecordID": "CRP0032", "State": "West Bengal", "CropName": "Maize", "HarvestDate": "2023-09-24", "AreaHectares": 3627, "YieldTonnes": 2045.1, "RainfallMM": 2096}, {"RecordID": "CRP0345", "State": "Rajasthan", "CropName": "Wheat", "HarvestDate": "2023-10-12", "AreaHectares": 1252, "YieldTonnes": 977.8, "RainfallMM": 1509}, {"RecordID": "CRP0462", "State": "Telangana", "CropName": "Pulses", "HarvestDate": "2024-09-09", "AreaHectares": 1525, "YieldTonnes": 1310.3, "RainfallMM": 972}, {"RecordID": "CRP0354", "State": "West Bengal", "CropName": "Pulses", "HarvestDate": "2024-04-24", "AreaHectares": 4292, "YieldTonnes": 1535.1, "RainfallMM": 1827}, {"RecordID": "CRP0442", "State": "West Bengal", "CropName": "Rice", "HarvestDate": "2024-07-07", "AreaHectares": 4870, "YieldTonnes": 194.1, "RainfallMM": 1222}, {"RecordID": "CRP0191", "State": "Tamil Nadu", "CropName": "Wheat", "HarvestDate": "2024-06-06", "AreaHectares": 4185, "YieldTonnes": 1795.1, "RainfallMM": 2230}, {"RecordID": "CRP0158", "State": "Telangana", "CropName": "Pulses", "HarvestDate": "2023-03-14", "AreaHectares": 3811, "YieldTonnes": 736.6, "RainfallMM": 1661}, {"RecordID": "CRP0400", "State": "Tamil Nadu", "CropName": "Pulses", "HarvestDate": "2023-10-06", "AreaHectares": 2731, "YieldTonnes": 2193.9, "RainfallMM": 252}, {"RecordID": "CRP0451", "State": "Uttar Pradesh", "CropName": "Cotton", "HarvestDate": "2024-07-07", "AreaHectares": 4020, "YieldTonnes": 2214.1, "RainfallMM": 1435}, {"RecordID": "CRP0198", "State": "Punjab", "CropName": "Maize", "HarvestDate": "2023-10-17", "AreaHectares": 3415, "YieldTonnes": 2535.2, "RainfallMM": 649}, {"RecordID": "CRP0129", "State": "Karnataka", "CropName": "Pulses", "HarvestDate": "2023-12-06", "AreaHectares": 1950, "YieldTonnes": 239.8, "RainfallMM": 997}, {"RecordID": "CRP0471", "State": "Delhi", "CropName": "Wheat", "HarvestDate": "2024-11-28", "AreaHectares": 4284, "YieldTonnes": 1819.3, "RainfallMM": 1367}, {"RecordID": "CRP0124", "State": "Delhi", "CropName": "Sugarcane", "HarvestDate": "2024-06-27", "AreaHectares": 3371, "YieldTonnes": 2689.6, "RainfallMM": 1901}, {"RecordID": "CRP0339", "State": "Delhi", "CropName": "Cotton", "HarvestDate": "2024-11-18", "AreaHectares": 742, "YieldTonnes": 1192.8, "RainfallMM": 607}, {"RecordID": "CRP0279", "State": "Uttar Pradesh", "CropName": "Wheat", "HarvestDate": "2023-12-26", "AreaHectares": 2034, "YieldTonnes": 2925.5, "RainfallMM": 1025}, {"RecordID": "CRP0480", "State": "Punjab", "CropName": "Maize", "HarvestDate": "2024-07-31", "AreaHectares": 3836, "YieldTonnes": 2070.0, "RainfallMM": 501}, {"RecordID": "CRP0099", "State": "West Bengal", "CropName": "Sugarcane", "HarvestDate": "2024-06-25", "AreaHectares": 3399, "YieldTonnes": 1472.8, "RainfallMM": 1068}, {"RecordID": "CRP0300", "State": "Delhi", "CropName": "Pulses", "HarvestDate": "2024-12-09", "AreaHectares": 1448, "YieldTonnes": 829.7, "RainfallMM": 1413}, {"RecordID": "CRP0299", "State": "Rajasthan", "CropName": "Cotton", "HarvestDate": "2023-02-28", "AreaHectares": 1878, "YieldTonnes": 1865.3, "RainfallMM": 2348}, {"RecordID": "CRP0465", "State": "Gujarat", "CropName": "Cotton", "HarvestDate": "2024-03-18", "AreaHectares": 1086, "YieldTonnes": 493.4, "RainfallMM": 1846}, {"RecordID": "CRP0295", "State": "Tamil Nadu", "CropName": "Rice", "HarvestDate": "2024-03-18", "AreaHectares": 3878, "YieldTonnes": 1558.0, "RainfallMM": 2284}, {"RecordID": "CRP0255", "State": "Rajasthan", "CropName": "Pulses", "HarvestDate": "2024-05-21", "AreaHectares": 267, "YieldTonnes": 2077.2, "RainfallMM": 781}, {"RecordID": "CRP0147", "State": "Telangana", "CropName": "Maize", "HarvestDate": "2024-01-12", "AreaHectares": 271, "YieldTonnes": 1959.3, "RainfallMM": 774}, {"RecordID": "CRP0181", "State": "Delhi", "CropName": "Sugarcane", "HarvestDate": "2024-04-14", "AreaHectares": 1369, "YieldTonnes": 1145.1, "RainfallMM": 1946}, {"RecordID": "CRP0357", "State": "Telangana", "CropName": "Maize", "HarvestDate": "2024-01-09", "AreaHectares": 2805, "YieldTonnes": 2666.2, "RainfallMM": 826}, {"RecordID": "CRP0303", "State": "Rajasthan", "CropName": "Maize", "HarvestDate": "2024-08-25", "AreaHectares": 4920, "YieldTonnes": 1737.5, "RainfallMM": 289}, {"RecordID": "CRP0241", "State": "Tamil Nadu", "CropName": "Pulses", "HarvestDate": "2024-11-07", "AreaHectares": 1273, "YieldTonnes": 1312.7, "RainfallMM": 1326}, {"RecordID": "CRP0388", "State": "Uttar Pradesh", "CropName": "Pulses", "HarvestDate": "2023-12-11", "AreaHectares": 1060, "YieldTonnes": 2116.4, "RainfallMM": 2221}, {"RecordID": "CRP0282", "State": "Rajasthan", "CropName": "Pulses", "HarvestDate": "2023-04-13", "AreaHectares": 578, "YieldTonnes": 983.5, "RainfallMM": 1929}, {"RecordID": "CRP0341", "State": "Delhi", "CropName": "Pulses", "HarvestDate": "2024-05-11", "AreaHectares": 171, "YieldTonnes": 1533.7, "RainfallMM": 723}, {"RecordID": "CRP0109", "State": "Tamil Nadu", "CropName": "Rice", "HarvestDate": "2023-10-16", "AreaHectares": 4571, "YieldTonnes": 471.5, "RainfallMM": 1483}, {"RecordID": "CRP0274", "State": "Punjab", "CropName": "Wheat", "HarvestDate": "2023-02-16", "AreaHectares": 4735, "YieldTonnes": 640.1, "RainfallMM": 1163}, {"RecordID": "CRP0004", "State": "Uttar Pradesh", "CropName": "Cotton", "HarvestDate": "2023-08-28", "AreaHectares": 838, "YieldTonnes": 2915.7, "RainfallMM": 612}, {"RecordID": "CRP0407", "State": "Karnataka", "CropName": "Rice", "HarvestDate": "2023-12-16", "AreaHectares": 580, "YieldTonnes": 2553.2, "RainfallMM": 1150}, {"RecordID": "CRP0195", "State": "Telangana", "CropName": "Sugarcane", "HarvestDate": "2024-01-24", "AreaHectares": 4675, "YieldTonnes": 1614.1, "RainfallMM": 1795}, {"RecordID": "CRP0083", "State": "Uttar Pradesh", "CropName": "Rice", "HarvestDate": "2023-01-06", "AreaHectares": 2456, "YieldTonnes": 2676.4, "RainfallMM": 1975}, {"RecordID": "CRP0262", "State": "Rajasthan", "CropName": "Sugarcane", "HarvestDate": "2024-02-11", "AreaHectares": 2579, "YieldTonnes": 2669.3, "RainfallMM": 915}, {"RecordID": "CRP0054", "State": "Rajasthan", "CropName": "Maize", "HarvestDate": "2024-09-03", "AreaHectares": 3438, "YieldTonnes": 1447.7, "RainfallMM": 2309}, {"RecordID": "CRP0261", "State": "Maharashtra", "CropName": "Wheat", "HarvestDate": "2024-05-04", "AreaHectares": 2644, "YieldTonnes": 1362.8, "RainfallMM": 2064}, {"RecordID": "CRP0085", "State": "Tamil Nadu", "CropName": "Maize", "HarvestDate": "2023-01-14", "AreaHectares": 2712, "YieldTonnes": 2174.5, "RainfallMM": 1490}, {"RecordID": "CRP0438", "State": "Rajasthan", "CropName": "Maize", "HarvestDate": "2023-08-29", "AreaHectares": 3242, "YieldTonnes": 1020.2, "RainfallMM": 555}, {"RecordID": "CRP0180", "State": "Maharashtra", "CropName": "Sugarcane", "HarvestDate": "2024-08-20", "AreaHectares": 1832, "YieldTonnes": 15.1, "RainfallMM": 924}, {"RecordID": "CRP0495", "State": "Telangana", "CropName": "Pulses", "HarvestDate": "2024-09-13", "AreaHectares": 2516, "YieldTonnes": 734.3, "RainfallMM": 2004}, {"RecordID": "CRP0230", "State": "Uttar Pradesh", "CropName": "Sugarcane", "HarvestDate": "2023-11-29", "AreaHectares": 4831, "YieldTonnes": 1401.4, "RainfallMM": 1370}, {"RecordID": "CRP0432", "State": "Telangana", "CropName": "Maize", "HarvestDate": "2023-10-07", "AreaHectares": 1202, "YieldTonnes": 261.5, "RainfallMM": 1636}, {"RecordID": "CRP0234", "State": "Telangana", "CropName": "Cotton", "HarvestDate": "2023-11-03", "AreaHectares": 2487, "YieldTonnes": 77.8, "RainfallMM": 982}, {"RecordID": "CRP0075", "State": "Uttar Pradesh", "CropName": "Rice", "HarvestDate": "2023-03-15", "AreaHectares": 68, "YieldTonnes": 212.5, "RainfallMM": 554}, {"RecordID": "CRP0466", "State": "Tamil Nadu", "CropName": "Sugarcane", "HarvestDate": "2023-12-30", "AreaHectares": 1381, "YieldTonnes": 1448.8, "RainfallMM": 1039}, {"RecordID": "CRP0413", "State": "West Bengal", "CropName": "Maize", "HarvestDate": "2024-04-26", "AreaHectares": 1375, "YieldTonnes": 2235.3, "RainfallMM": 2031}, {"RecordID": "CRP0497", "State": "Delhi", "CropName": "Maize", "HarvestDate": "2023-12-19", "AreaHectares": 34, "YieldTonnes": 1329.0, "RainfallMM": 2093}, {"RecordID": "CRP0491", "State": "Rajasthan", "CropName": "Rice", "HarvestDate": "2024-12-04", "AreaHectares": 4011, "YieldTonnes": 2145.4, "RainfallMM": 2146}, {"RecordID": "CRP0024", "State": "Delhi", "CropName": "Rice", "HarvestDate": "2024-07-05", "AreaHectares": 4181, "YieldTonnes": 2413.9, "RainfallMM": 434}, {"RecordID": "CRP0480", "State": "Punjab", "CropName": "Maize", "HarvestDate": "2024-07-31", "AreaHectares": 3836, "YieldTonnes": 2070.0, "RainfallMM": 501}, {"RecordID": "CRP0155", "State": "Delhi", "CropName": "Sugarcane", "HarvestDate": "2023-12-13", "AreaHectares": 2473, "YieldTonnes": 402.0, "RainfallMM": 1068}, {"RecordID": "CRP0434", "State": "Tamil Nadu", "CropName": "Sugarcane", "HarvestDate": "2024-10-22", "AreaHectares": 712, "YieldTonnes": 1018.0, "RainfallMM": 1357}, {"RecordID": "CRP0192", "State": "Gujarat", "CropName": "Sugarcane", "HarvestDate": "2023-09-18", "AreaHectares": 2869, "YieldTonnes": 612.8, "RainfallMM": 436}, {"RecordID": "CRP0287", "State": "Karnataka", "CropName": "Maize", "HarvestDate": "2023-05-10", "AreaHectares": 3763, "YieldTonnes": 1099.2, "RainfallMM": 591}, {"RecordID": "CRP0019", "State": "Karnataka", "CropName": "Rice", "HarvestDate": "2024-03-21", "AreaHectares": 309, "YieldTonnes": 1307.6, "RainfallMM": 1534}, {"RecordID": "CRP0318", "State": "Gujarat", "CropName": "Wheat", "HarvestDate": "2023-04-26", "AreaHectares": 2561, "YieldTonnes": 2839.8, "RainfallMM": 470}, {"RecordID": "CRP0051", "State": "Karnataka", "CropName": "Pulses", "HarvestDate": "2024-05-25", "AreaHectares": 3579, "YieldTonnes": 2624.4, "RainfallMM": 2224}, {"RecordID": "CRP0039", "State": "Tamil Nadu", "CropName": "Maize", "HarvestDate": "2024-11-12", "AreaHectares": 2902, "YieldTonnes": 2057.6, "RainfallMM": 1310}, {"RecordID": "CRP0194", "State": "Tamil Nadu", "CropName": "Cotton", "HarvestDate": "2023-10-12", "AreaHectares": 1377, "YieldTonnes": 2089.2, "RainfallMM": 2460}, {"RecordID": "CRP0418", "State": "Rajasthan", "CropName": "Rice", "HarvestDate": "2024-12-24", "AreaHectares": 1045, "YieldTonnes": 655.3, "RainfallMM": 978}, {"RecordID": "CRP0189", "State": "Punjab", "CropName": "Wheat", "HarvestDate": "2023-04-13", "AreaHectares": 2926, "YieldTonnes": 2023.3, "RainfallMM": 1911}, {"RecordID": "CRP0493", "State": "Telangana", "CropName": "Wheat", "HarvestDate": "2023-06-27", "AreaHectares": 1385, "YieldTonnes": 2606.4, "RainfallMM": 232}, {"RecordID": "CRP0006", "State": "West Bengal", "CropName": "Sugarcane", "HarvestDate": "2024-06-15", "AreaHectares": 2683, "YieldTonnes": 1536.1, "RainfallMM": 1557}, {"RecordID": "CRP0076", "State": "Tamil Nadu", "CropName": "Sugarcane", "HarvestDate": "2023-09-18", "AreaHectares": 4266, "YieldTonnes": 44734.0, "RainfallMM": 912}, {"RecordID": "CRP0143", "State": "West Bengal", "CropName": "Cotton", "HarvestDate": "2023-03-03", "AreaHectares": 120, "YieldTonnes": 872.8, "RainfallMM": 368}, {"RecordID": "CRP0048", "State": "Uttar Pradesh", "CropName": "Cotton", "HarvestDate": "2023-04-30", "AreaHectares": 4862, "YieldTonnes": 2372.5, "RainfallMM": 1373}, {"RecordID": "CRP0047", "State": "Uttar Pradesh", "CropName": "Wheat", "HarvestDate": "2023-02-19", "AreaHectares": 2147, "YieldTonnes": 1657.9, "RainfallMM": 367}, {"RecordID": "CRP0071", "State": "Karnataka", "CropName": "Maize", "HarvestDate": "2024-10-07", "AreaHectares": 377, "YieldTonnes": 1336.8, "RainfallMM": 546}, {"RecordID": "CRP0080", "State": "Delhi", "CropName": "Rice", "HarvestDate": "2023-11-13", "AreaHectares": 795, "YieldTonnes": 444.8, "RainfallMM": 1398}, {"RecordID": "CRP0031", "State": "Gujarat", "CropName": "Rice", "HarvestDate": "2023-11-19", "AreaHectares": 1759, "YieldTonnes": 1771.3, "RainfallMM": 1286}, {"RecordID": "CRP0012", "State": "Rajasthan", "CropName": "Pulses", "HarvestDate": "2024-08-05", "AreaHectares": 1850, "YieldTonnes": 1213.4, "RainfallMM": 1560}, {"RecordID": "CRP0358", "State": "Karnataka", "CropName": "Pulses", "HarvestDate": "2023-01-19", "AreaHectares": 1211, "YieldTonnes": 2972.2, "RainfallMM": 1495}, {"RecordID": "CRP0482", "State": "Telangana", "CropName": "Cotton", "HarvestDate": "2024-08-23", "AreaHectares": 694, "YieldTonnes": -2476.5, "RainfallMM": 1973}, {"RecordID": "CRP0454", "State": "Gujarat", "CropName": "Rice", "HarvestDate": "2024-09-06", "AreaHectares": 2191, "YieldTonnes": 2149.0, "RainfallMM": 1127}, {"RecordID": "CRP0269", "State": "Karnataka", "CropName": "Wheat", "HarvestDate": "2024-08-08", "AreaHectares": 3984, "YieldTonnes": 478.7, "RainfallMM": 2209}, {"RecordID": "CRP0116", "State": "Telangana", "CropName": "Cotton", "HarvestDate": "2024-03-11", "AreaHectares": 1454, "YieldTonnes": 2180.1, "RainfallMM": 2127}, {"RecordID": "CRP0026", "State": "Telangana", "CropName": "Cotton", "HarvestDate": "2024-04-02", "AreaHectares": 923, "YieldTonnes": 2908.5, "RainfallMM": 1617}, {"RecordID": "CRP0447", "State": "Uttar Pradesh", "CropName": "Wheat", "HarvestDate": "2024-03-21", "AreaHectares": 177, "YieldTonnes": 2850.8, "RainfallMM": 2236}, {"RecordID": "CRP0196", "State": "Gujarat", "CropName": "Wheat", "HarvestDate": "2024-08-30", "AreaHectares": 2919, "YieldTonnes": 60.6, "RainfallMM": 1225}, {"RecordID": "CRP0385", "State": "West Bengal", "CropName": "Cotton", "HarvestDate": "2023-10-03", "AreaHectares": 1557, "YieldTonnes": 1639.6, "RainfallMM": 2393}, {"RecordID": "CRP0066", "State": "Rajasthan", "CropName": "Maize", "HarvestDate": "2023-12-24", "AreaHectares": 3835, "YieldTonnes": 2657.4, "RainfallMM": 368}, {"RecordID": "CRP0360", "State": "Karnataka", "CropName": "Wheat", "HarvestDate": "2023-03-29", "AreaHectares": 2098, "YieldTonnes": 2325.2, "RainfallMM": 456}, {"RecordID": "CRP0046", "State": "Uttar Pradesh", "CropName": "Pulses", "HarvestDate": "2023-06-28", "AreaHectares": 4955, "YieldTonnes": 2775.8, "RainfallMM": 1456}, {"RecordID": "CRP0431", "State": "West Bengal", "CropName": "Sugarcane", "HarvestDate": "2024-08-18", "AreaHectares": 353, "YieldTonnes": 1091.7, "RainfallMM": 551}, {"RecordID": "CRP0417", "State": "Karnataka", "CropName": "Wheat", "HarvestDate": "2024-10-02", "AreaHectares": 1562, "YieldTonnes": 952.8, "RainfallMM": 2384}, {"RecordID": "CRP0496", "State": "Punjab", "CropName": "Rice", "HarvestDate": "2023-06-30", "AreaHectares": 3896, "YieldTonnes": 274.6, "RainfallMM": 1089}, {"RecordID": "CRP0404", "State": "Uttar Pradesh", "CropName": "Rice", "HarvestDate": "2023-12-08", "AreaHectares": 212, "YieldTonnes": 2947.5, "RainfallMM": 2481}, {"RecordID": "CRP0244", "State": "Delhi", "CropName": "Wheat", "HarvestDate": "2023-12-14", "AreaHectares": 2575, "YieldTonnes": 383.8, "RainfallMM": 1479}, {"RecordID": "CRP0474", "State": "Delhi", "CropName": "Rice", "HarvestDate": "2023-05-23", "AreaHectares": 1769, "YieldTonnes": 2319.7, "RainfallMM": 576}, {"RecordID": "CRP0488", "State": "Gujarat", "CropName": "Pulses", "HarvestDate": "2024-08-18", "AreaHectares": 4334, "YieldTonnes": 1537.4, "RainfallMM": 2436}, {"RecordID": "CRP0267", "State": "Maharashtra", "CropName": "Sugarcane", "HarvestDate": "2024-03-04", "AreaHectares": 2833, "YieldTonnes": 1909.0, "RainfallMM": 902}, {"RecordID": "CRP0069", "State": "Tamil Nadu", "CropName": "Rice", "HarvestDate": "2023-02-23", "AreaHectares": 1052, "YieldTonnes": 37.2, "RainfallMM": 1230}, {"RecordID": "CRP0022", "State": "Punjab", "CropName": "Pulses", "HarvestDate": "2024-04-02", "AreaHectares": 3973, "YieldTonnes": 1076.0, "RainfallMM": 2392}, {"RecordID": "CRP0078", "State": "Gujarat", "CropName": "Wheat", "HarvestDate": "2024-03-19", "AreaHectares": 4951, "YieldTonnes": 1057.3, "RainfallMM": 710}, {"RecordID": "CRP0306", "State": "Tamil Nadu", "CropName": "Rice", "HarvestDate": "2023-07-14", "AreaHectares": 209, "YieldTonnes": 2680.6, "RainfallMM": 1854}, {"RecordID": "CRP0450", "State": "Rajasthan", "CropName": "Cotton", "HarvestDate": "2023-09-28", "AreaHectares": 4017, "YieldTonnes": 720.1, "RainfallMM": 2005}, {"RecordID": "CRP0237", "State": "Gujarat", "CropName": "Rice", "HarvestDate": "2023-11-10", "AreaHectares": 2255, "YieldTonnes": 627.0, "RainfallMM": 1306}, {"RecordID": "CRP0291", "State": "Karnataka", "CropName": "Cotton", "HarvestDate": "2023-11-10", "AreaHectares": 3809, "YieldTonnes": 2965.6, "RainfallMM": 1083}, {"RecordID": "CRP0285", "State": "Karnataka", "CropName": "Rice", "HarvestDate": "2023-05-06", "AreaHectares": 417, "YieldTonnes": 305.5, "RainfallMM": 462}, {"RecordID": "CRP0059", "State": "Maharashtra", "CropName": "Pulses", "HarvestDate": "2023-03-15", "AreaHectares": 1872, "YieldTonnes": 1717.3, "RainfallMM": 2312}, {"RecordID": "CRP0126", "State": "Rajasthan", "CropName": "Wheat", "HarvestDate": "2024-12-14", "AreaHectares": 1150, "YieldTonnes": 2069.8, "RainfallMM": 2373}, {"RecordID": "CRP0229", "State": "Maharashtra", "CropName": "Cotton", "HarvestDate": "2024-04-13", "AreaHectares": 1893, "YieldTonnes": 368.7, "RainfallMM": 226}, {"RecordID": "CRP0043", "State": "Gujarat", "CropName": "Pulses", "HarvestDate": "2023-10-15", "AreaHectares": 124, "YieldTonnes": 2225.0, "RainfallMM": 614}, {"RecordID": "CRP0005", "State": "Karnataka", "CropName": "Maize", "HarvestDate": "2023-11-18", "AreaHectares": 3183, "YieldTonnes": 540.4, "RainfallMM": 2384}, {"RecordID": "CRP0122", "State": "Punjab", "CropName": "Pulses", "HarvestDate": "2023-08-15", "AreaHectares": 2115, "YieldTonnes": 2994.8, "RainfallMM": 993}, {"RecordID": "CRP0169", "State": "Maharashtra", "CropName": "Cotton", "HarvestDate": "2024-02-01", "AreaHectares": 166, "YieldTonnes": 328.5, "RainfallMM": 1107}, {"RecordID": "CRP0141", "State": "West Bengal", "CropName": "Rice", "HarvestDate": "2024-11-04", "AreaHectares": 4013, "YieldTonnes": 2429.3, "RainfallMM": 1393}, {"RecordID": "CRP0314", "State": "Tamil Nadu", "CropName": "Wheat", "HarvestDate": "2024-11-04", "AreaHectares": 3801, "YieldTonnes": 2248.3, "RainfallMM": 2047}, {"RecordID": "CRP0065", "State": "Punjab", "CropName": "Sugarcane", "HarvestDate": "2023-02-04", "AreaHectares": 4838, "YieldTonnes": 1263.3, "RainfallMM": 1072}, {"RecordID": "CRP0425", "State": "Karnataka", "CropName": "Wheat", "HarvestDate": "2024-11-19", "AreaHectares": 2972, "YieldTonnes": 2121.1, "RainfallMM": 1091}, {"RecordID": "CRP0110", "State": "Gujarat", "CropName": "Sugarcane", "HarvestDate": "2024-07-18", "AreaHectares": 2794, "YieldTonnes": 496.8, "RainfallMM": 1819}, {"RecordID": "CRP0281", "State": "Karnataka", "CropName": "Sugarcane", "HarvestDate": "2024-07-30", "AreaHectares": 2820, "YieldTonnes": 878.3, "RainfallMM": 221}, {"RecordID": "CRP0119", "State": "Rajasthan", "CropName": "Cotton", "HarvestDate": "2024-03-30", "AreaHectares": 4359, "YieldTonnes": 180.2, "RainfallMM": 2078}, {"RecordID": "CRP0206", "State": "Telangana", "CropName": "Maize", "HarvestDate": "2023-11-12", "AreaHectares": 2642, "YieldTonnes": 2507.6, "RainfallMM": 1865}, {"RecordID": "CRP0499", "State": "Telangana", "CropName": "Sugarcane", "HarvestDate": "2023-04-12", "AreaHectares": 4475, "YieldTonnes": 1405.3, "RainfallMM": 448}, {"RecordID": "CRP0007", "State": "Uttar Pradesh", "CropName": "Maize", "HarvestDate": "2024-12-19", "AreaHectares": 1728, "YieldTonnes": 722.8, "RainfallMM": 770}, {"RecordID": "CRP0263", "State": "Punjab", "CropName": "Rice", "HarvestDate": "2024-11-13", "AreaHectares": 810, "YieldTonnes": 2090.6, "RainfallMM": 1091}, {"RecordID": "CRP0307", "State": "Karnataka", "CropName": "Wheat", "HarvestDate": "2024-01-09", "AreaHectares": 4434, "YieldTonnes": 1836.2, "RainfallMM": 2101}, {"RecordID": "CRP0260", "State": "Maharashtra", "CropName": "Rice", "HarvestDate": "2023-09-07", "AreaHectares": 154, "YieldTonnes": 1611.9, "RainfallMM": 1245}, {"RecordID": "CRP0123", "State": "Telangana", "CropName": "Pulses", "HarvestDate": "2023-07-17", "AreaHectares": 3423, "YieldTonnes": 1079.0, "RainfallMM": 432}, {"RecordID": "CRP0079", "State": "Tamil Nadu", "CropName": "Rice", "HarvestDate": "2024-01-03", "AreaHectares": 4517, "YieldTonnes": 360.4, "RainfallMM": 1146}, {"RecordID": "CRP0486", "State": "Gujarat", "CropName": "Sugarcane", "HarvestDate": "2024-11-27", "AreaHectares": 2413, "YieldTonnes": 1873.5, "RainfallMM": 597}, {"RecordID": "CRP0152", "State": "Karnataka", "CropName": "Cotton", "HarvestDate": "2023-11-12", "AreaHectares": 2092, "YieldTonnes": 1223.9, "RainfallMM": 1190}, {"RecordID": "CRP0292", "State": "Maharashtra", "CropName": "Rice", "HarvestDate": "2024-03-28", "AreaHectares": 4367, "YieldTonnes": 2131.5, "RainfallMM": 427}, {"RecordID": "CRP0164", "State": "Punjab", "CropName": "Pulses", "HarvestDate": "2024-12-01", "AreaHectares": 3391, "YieldTonnes": 341.0, "RainfallMM": 894}, {"RecordID": "CRP0266", "State": "Gujarat", "CropName": "Maize", "HarvestDate": "2024-05-03", "AreaHectares": 2439, "YieldTonnes": 2913.1, "RainfallMM": 1553}, {"RecordID": "CRP0377", "State": "Tamil Nadu", "CropName": "Cotton", "HarvestDate": "2024-01-15", "AreaHectares": 2000, "YieldTonnes": 2149.8, "RainfallMM": 1524}, {"RecordID": "CRP0328", "State": "Karnataka", "CropName": "Cotton", "HarvestDate": "2023-11-23", "AreaHectares": 2381, "YieldTonnes": 592.1, "RainfallMM": 259}, {"RecordID": "CRP0144", "State": "Tamil Nadu", "CropName": "Wheat", "HarvestDate": "2024-07-24", "AreaHectares": 1728, "YieldTonnes": 555.9, "RainfallMM": 2038}, {"RecordID": "CRP0387", "State": "Tamil Nadu", "CropName": "Wheat", "HarvestDate": "2023-12-11", "AreaHectares": 661, "YieldTonnes": 1862.9, "RainfallMM": 1691}, {"RecordID": "CRP0304", "State": "Karnataka", "CropName": "Wheat", "HarvestDate": "2023-05-04", "AreaHectares": 2390, "YieldTonnes": 1282.6, "RainfallMM": 1362}, {"RecordID": "CRP0200", "State": "Gujarat", "CropName": "Pulses", "HarvestDate": "2024-10-21", "AreaHectares": 2293, "YieldTonnes": 1851.3, "RainfallMM": 1873}, {"RecordID": "CRP0042", "State": "Uttar Pradesh", "CropName": "Wheat", "HarvestDate": "2024-05-10", "AreaHectares": 3172, "YieldTonnes": 2215.2, "RainfallMM": 521}, {"RecordID": "CRP0460", "State": "Karnataka", "CropName": "Cotton", "HarvestDate": "2023-02-27", "AreaHectares": 3502, "YieldTonnes": 2934.4, "RainfallMM": 1107}, {"RecordID": "CRP0405", "State": "Punjab", "CropName": "Rice", "HarvestDate": "2023-01-28", "AreaHectares": 951, "YieldTonnes": 2244.3, "RainfallMM": 272}, {"RecordID": "CRP0349", "State": "Gujarat", "CropName": "Rice", "HarvestDate": "2023-04-24", "AreaHectares": 2166, "YieldTonnes": 817.0, "RainfallMM": 2083}, {"RecordID": "CRP0232", "State": "Rajasthan", "CropName": "Cotton", "HarvestDate": "2023-04-05", "AreaHectares": 156, "YieldTonnes": 130.8, "RainfallMM": 2218}, {"RecordID": "CRP0246", "State": "Rajasthan", "CropName": "Rice", "HarvestDate": "2023-09-19", "AreaHectares": 1897, "YieldTonnes": 1590.2, "RainfallMM": 2210}, {"RecordID": "CRP0382", "State": "Gujarat", "CropName": "Sugarcane", "HarvestDate": "2023-09-22", "AreaHectares": 725, "YieldTonnes": 2321.6, "RainfallMM": 1000}, {"RecordID": "CRP0489", "State": "Delhi", "CropName": "Rice", "HarvestDate": "2023-11-15", "AreaHectares": 738, "YieldTonnes": 2446.4, "RainfallMM": 2003}, {"RecordID": "CRP0320", "State": "Telangana", "CropName": "Sugarcane", "HarvestDate": "2024-03-21", "AreaHectares": 136, "YieldTonnes": 1461.2, "RainfallMM": 918}, {"RecordID": "CRP0264", "State": "Punjab", "CropName": "Maize", "HarvestDate": "2024-10-15", "AreaHectares": 1495, "YieldTonnes": 2696.5, "RainfallMM": 700}, {"RecordID": "CRP0030", "State": "Telangana", "CropName": "Maize", "HarvestDate": "2023-02-04", "AreaHectares": 1533, "YieldTonnes": 2997.9, "RainfallMM": 639}, {"RecordID": "CRP0239", "State": "Telangana", "CropName": "Wheat", "HarvestDate": "2023-01-06", "AreaHectares": 4670, "YieldTonnes": 837.5, "RainfallMM": 1922}, {"RecordID": "CRP0251", "State": "Tamil Nadu", "CropName": "Cotton", "HarvestDate": "2023-10-15", "AreaHectares": 1240, "YieldTonnes": 1313.9, "RainfallMM": 1596}, {"RecordID": "CRP0163", "State": "Telangana", "CropName": "Rice", "HarvestDate": "2024-03-19", "AreaHectares": 1601, "YieldTonnes": 2854.9, "RainfallMM": 558}, {"RecordID": "CRP0150", "State": "West Bengal", "CropName": "Cotton", "HarvestDate": "2024-09-08", "AreaHectares": 1614, "YieldTonnes": 2734.0, "RainfallMM": 674}, {"RecordID": "CRP0383", "State": "Tamil Nadu", "CropName": "Cotton", "HarvestDate": "2023-10-01", "AreaHectares": 1655, "YieldTonnes": 2181.1, "RainfallMM": 1360}, {"RecordID": "CRP0379", "State": "Karnataka", "CropName": "Sugarcane", "HarvestDate": "2024-10-07", "AreaHectares": 1425, "YieldTonnes": 2801.0, "RainfallMM": 1778}, {"RecordID": "CRP0095", "State": "Maharashtra", "CropName": "Wheat", "HarvestDate": "2023-09-15", "AreaHectares": 2854, "YieldTonnes": 228.5, "RainfallMM": 1538}, {"RecordID": "CRP0222", "State": "Gujarat", "CropName": "Sugarcane", "HarvestDate": "2023-10-13", "AreaHectares": 4125, "YieldTonnes": 2933.7, "RainfallMM": 1678}, {"RecordID": "CRP0086", "State": "Gujarat", "CropName": "Cotton", "HarvestDate": "2023-02-11", "AreaHectares": 446, "YieldTonnes": 252.8, "RainfallMM": 325}, {"RecordID": "CRP0188", "State": "Karnataka", "CropName": "Pulses", "HarvestDate": "2024-01-20", "AreaHectares": 1208, "YieldTonnes": 2604.4, "RainfallMM": 2481}, {"RecordID": "CRP0090", "State": "Uttar Pradesh", "CropName": "Wheat", "HarvestDate": "2023-10-27", "AreaHectares": 1376, "YieldTonnes": 2539.4, "RainfallMM": 611}, {"RecordID": "CRP0326", "State": "Rajasthan", "CropName": "Sugarcane", "HarvestDate": "2024-03-06", "AreaHectares": 3145, "YieldTonnes": 1827.1, "RainfallMM": 836}, {"RecordID": "CRP0035", "State": "Telangana", "CropName": "Pulses", "HarvestDate": "2024-01-06", "AreaHectares": 1711, "YieldTonnes": 34.0, "RainfallMM": 850}, {"RecordID": "CRP0218", "State": "Karnataka", "CropName": "Wheat", "HarvestDate": "2023-05-11", "AreaHectares": 902, "YieldTonnes": 2056.2, "RainfallMM": 1727}, {"RecordID": "CRP0073", "State": "Punjab", "CropName": "Pulses", "HarvestDate": "2023-01-20", "AreaHectares": 2650, "YieldTonnes": 1489.1, "RainfallMM": 1476}, {"RecordID": "CRP0221", "State": "Delhi", "CropName": "Rice", "HarvestDate": "2024-11-28", "AreaHectares": 592, "YieldTonnes": 1859.4, "RainfallMM": 2211}, {"RecordID": "CRP0463", "State": "Tamil Nadu", "CropName": "Cotton", "HarvestDate": "2024-02-12", "AreaHectares": 3680, "YieldTonnes": 1612.2, "RainfallMM": 1009}, {"RecordID": "CRP0472", "State": "Delhi", "CropName": "Cotton", "HarvestDate": "2024-06-22", "AreaHectares": 3632, "YieldTonnes": 388.4, "RainfallMM": 753}, {"RecordID": "CRP0013", "State": "Delhi", "CropName": "Rice", "HarvestDate": "2024-09-10", "AreaHectares": 507, "YieldTonnes": 730.7, "RainfallMM": 565}, {"RecordID": "CRP0199", "State": "Punjab", "CropName": "Pulses", "HarvestDate": "2024-01-10", "AreaHectares": 3069, "YieldTonnes": 785.3, "RainfallMM": 768}, {"RecordID": "CRP0214", "State": "Delhi", "CropName": "Pulses", "HarvestDate": "2023-04-01", "AreaHectares": 1676, "YieldTonnes": 1941.2, "RainfallMM": 1353}, {"RecordID": "CRP0445", "State": "Telangana", "CropName": "Maize", "HarvestDate": "2023-07-11", "AreaHectares": 1858, "YieldTonnes": 790.0, "RainfallMM": 2104}, {"RecordID": "CRP0235", "State": "West Bengal", "CropName": "Pulses", "HarvestDate": "2024-06-26", "AreaHectares": 4953, "YieldTonnes": 2474.3, "RainfallMM": 2179}, {"RecordID": "CRP0487", "State": "Maharashtra", "CropName": "Maize", "HarvestDate": "2024-03-14", "AreaHectares": 2674, "YieldTonnes": 2088.8, "RainfallMM": 1206}, {"RecordID": "CRP0492", "State": "Gujarat", "CropName": "Sugarcane", "HarvestDate": "2024-04-27", "AreaHectares": 570, "YieldTonnes": 2291.1, "RainfallMM": 1594}, {"RecordID": "CRP0395", "State": "Maharashtra", "CropName": "Pulses", "HarvestDate": "2024-02-24", "AreaHectares": 2664, "YieldTonnes": 1102.3, "RainfallMM": 2073}, {"RecordID": "CRP0097", "State": "West Bengal", "CropName": "Sugarcane", "HarvestDate": "2024-04-18", "AreaHectares": 2344, "YieldTonnes": 681.5, "RainfallMM": 2141}, {"RecordID": "CRP0322", "State": "Tamil Nadu", "CropName": "Pulses", "HarvestDate": "2024-05-23", "AreaHectares": 3329, "YieldTonnes": 746.7, "RainfallMM": 804}, {"RecordID": "CRP0298", "State": "West Bengal", "CropName": "Cotton", "HarvestDate": "2024-02-14", "AreaHectares": 3930, "YieldTonnes": 283.5, "RainfallMM": 1260}, {"RecordID": "CRP0064", "State": "Maharashtra", "CropName": "Pulses", "HarvestDate": "2023-11-07", "AreaHectares": 137, "YieldTonnes": 1833.4, "RainfallMM": 1774}, {"RecordID": "CRP0223", "State": "Maharashtra", "CropName": "Cotton", "HarvestDate": "2024-05-19", "AreaHectares": 2650, "YieldTonnes": -6417.0, "RainfallMM": 2114}, {"RecordID": "CRP0096", "State": "Tamil Nadu", "CropName": "Cotton", "HarvestDate": "2024-03-15", "AreaHectares": 1499, "YieldTonnes": 1047.5, "RainfallMM": 2272}, {"RecordID": "CRP0014", "State": "Rajasthan", "CropName": "Pulses", "HarvestDate": "2024-02-29", "AreaHectares": 546, "YieldTonnes": 2672.8, "RainfallMM": 2134}, {"RecordID": "CRP0018", "State": "Rajasthan", "CropName": "Maize", "HarvestDate": "2023-11-26", "AreaHectares": 3537, "YieldTonnes": 500.8, "RainfallMM": 468}, {"RecordID": "CRP0367", "State": "Uttar Pradesh", "CropName": "Cotton", "HarvestDate": "2023-02-06", "AreaHectares": 3277, "YieldTonnes": 921.5, "RainfallMM": 1876}, {"RecordID": "CRP0247", "State": "Rajasthan", "CropName": "Maize", "HarvestDate": "2024-02-19", "AreaHectares": 3793, "YieldTonnes": 1999.5, "RainfallMM": 1415}, {"RecordID": "CRP0393", "State": "West Bengal", "CropName": "Sugarcane", "HarvestDate": "2024-02-04", "AreaHectares": 2106, "YieldTonnes": 522.0, "RainfallMM": 2248}, {"RecordID": "CRP0208", "State": "West Bengal", "CropName": "Rice", "HarvestDate": "2024-11-11", "AreaHectares": 2835, "YieldTonnes": 195.7, "RainfallMM": 1650}, {"RecordID": "CRP0091", "State": "Telangana", "CropName": "Wheat", "HarvestDate": "2024-12-31", "AreaHectares": 2875, "YieldTonnes": 1367.2, "RainfallMM": 1569}, {"RecordID": "CRP0308", "State": "Punjab", "CropName": "Sugarcane", "HarvestDate": "2023-06-17", "AreaHectares": 2297, "YieldTonnes": 1285.8, "RainfallMM": 2370}, {"RecordID": "CRP0335", "State": "Karnataka", "CropName": "Rice", "HarvestDate": "2024-03-22", "AreaHectares": 1496, "YieldTonnes": 2791.3, "RainfallMM": 2075}, {"RecordID": "CRP0365", "State": "Telangana", "CropName": "Pulses", "HarvestDate": "2024-09-24", "AreaHectares": 1856, "YieldTonnes": 217.6, "RainfallMM": 1242}, {"RecordID": "CRP0040", "State": "Rajasthan", "CropName": "Rice", "HarvestDate": "2023-11-30", "AreaHectares": 3508, "YieldTonnes": 1243.4, "RainfallMM": 661}, {"RecordID": "CRP0087", "State": "Punjab", "CropName": "Maize", "HarvestDate": "2023-10-28", "AreaHectares": 2375, "YieldTonnes": 1775.3, "RainfallMM": 1938}, {"RecordID": "CRP0182", "State": "Karnataka", "CropName": "Maize", "HarvestDate": "2024-02-16", "AreaHectares": 2554, "YieldTonnes": 27079.5, "RainfallMM": 1874}, {"RecordID": "CRP0412", "State": "Tamil Nadu", "CropName": "Rice", "HarvestDate": "2023-06-14", "AreaHectares": 1652, "YieldTonnes": 350.7, "RainfallMM": 2205}, {"RecordID": "CRP0146", "State": "Karnataka", "CropName": "Sugarcane", "HarvestDate": "2023-05-01", "AreaHectares": 135, "YieldTonnes": 2060.3, "RainfallMM": 2390}, {"RecordID": "CRP0159", "State": "West Bengal", "CropName": "Maize", "HarvestDate": "2024-05-24", "AreaHectares": 36, "YieldTonnes": 2678.1, "RainfallMM": 1151}, {"RecordID": "CRP0410", "State": "Maharashtra", "CropName": "Pulses", "HarvestDate": "2024-12-03", "AreaHectares": 1355, "YieldTonnes": 2072.2, "RainfallMM": 1229}, {"RecordID": "CRP0371", "State": "Karnataka", "CropName": "Maize", "HarvestDate": "2024-09-29", "AreaHectares": 2943, "YieldTonnes": 1591.9, "RainfallMM": 464}, {"RecordID": "CRP0372", "State": "West Bengal", "CropName": "Wheat", "HarvestDate": "2024-07-05", "AreaHectares": 382, "YieldTonnes": 823.6, "RainfallMM": 876}, {"RecordID": "CRP0355", "State": "Tamil Nadu", "CropName": "Maize", "HarvestDate": "2023-02-26", "AreaHectares": 1069, "YieldTonnes": 1166.5, "RainfallMM": 1027}, {"RecordID": "CRP0201", "State": "Telangana", "CropName": "Rice", "HarvestDate": "2024-06-01", "AreaHectares": 4504, "YieldTonnes": 2770.1, "RainfallMM": 413}, {"RecordID": "CRP0293", "State": "Tamil Nadu", "CropName": "Maize", "HarvestDate": "2024-03-21", "AreaHectares": 3923, "YieldTonnes": 1563.6, "RainfallMM": 1599}, {"RecordID": "CRP0072", "State": "Tamil Nadu", "CropName": "Pulses", "HarvestDate": "2024-05-05", "AreaHectares": 2614, "YieldTonnes": 2795.1, "RainfallMM": 934}, {"RecordID": "CRP0386", "State": "Maharashtra", "CropName": "Wheat", "HarvestDate": "2024-01-01", "AreaHectares": 2251, "YieldTonnes": 1963.5, "RainfallMM": 2047}, {"RecordID": "CRP0421", "State": "Tamil Nadu", "CropName": "Sugarcane", "HarvestDate": "2024-05-01", "AreaHectares": 3726, "YieldTonnes": 191.4, "RainfallMM": 1259}, {"RecordID": "CRP0368", "State": "Maharashtra", "CropName": "Sugarcane", "HarvestDate": "2024-10-17", "AreaHectares": 4507, "YieldTonnes": 1180.1, "RainfallMM": 1602}, {"RecordID": "CRP0397", "State": "Karnataka", "CropName": "Rice", "HarvestDate": "2023-09-05", "AreaHectares": 1617, "YieldTonnes": 1516.4, "RainfallMM": 1969}, {"RecordID": "CRP0484", "State": "West Bengal", "CropName": "Wheat", "HarvestDate": "2024-02-03", "AreaHectares": 3636, "YieldTonnes": 2216.0, "RainfallMM": 1198}, {"RecordID": "CRP0469", "State": "Tamil Nadu", "CropName": "Sugarcane", "HarvestDate": "2024-05-22", "AreaHectares": 2969, "YieldTonnes": 2858.6, "RainfallMM": 948}, {"RecordID": "CRP0392", "State": "Telangana", "CropName": "Sugarcane", "HarvestDate": "2024-04-29", "AreaHectares": 3094, "YieldTonnes": 785.6, "RainfallMM": 1568}, {"RecordID": "CRP0134", "State": "Telangana", "CropName": "Cotton", "HarvestDate": "2023-06-24", "AreaHectares": 668, "YieldTonnes": 1819.5, "RainfallMM": 805}, {"RecordID": "CRP0061", "State": "Punjab", "CropName": "Pulses", "HarvestDate": "2023-09-21", "AreaHectares": 4979, "YieldTonnes": 583.1, "RainfallMM": 1653}, {"RecordID": "CRP0433", "State": "Gujarat", "CropName": "Rice", "HarvestDate": "2023-06-11", "AreaHectares": 1942, "YieldTonnes": 2528.2, "RainfallMM": 664}, {"RecordID": "CRP0485", "State": "Uttar Pradesh", "CropName": "Sugarcane", "HarvestDate": "2023-07-17", "AreaHectares": 1445, "YieldTonnes": 823.2, "RainfallMM": 2265}, {"RecordID": "CRP0101", "State": "Punjab", "CropName": "Cotton", "HarvestDate": "2023-10-15", "AreaHectares": 240, "YieldTonnes": 1548.3, "RainfallMM": 1502}, {"RecordID": "CRP0020", "State": "Tamil Nadu", "CropName": "Cotton", "HarvestDate": "2023-12-01", "AreaHectares": 2396, "YieldTonnes": 1896.3, "RainfallMM": 871}, {"RecordID": "CRP0389", "State": "Maharashtra", "CropName": "Rice", "HarvestDate": "2024-12-27", "AreaHectares": 4752, "YieldTonnes": 251.7, "RainfallMM": 702}, {"RecordID": "CRP0468", "State": "Rajasthan", "CropName": "Cotton", "HarvestDate": "2024-05-04", "AreaHectares": 4944, "YieldTonnes": 1568.2, "RainfallMM": 1947}, {"RecordID": "CRP0265", "State": "Rajasthan", "CropName": "Cotton", "HarvestDate": "2024-11-20", "AreaHectares": 3758, "YieldTonnes": 2128.9, "RainfallMM": 606}, {"RecordID": "CRP0277", "State": "Karnataka", "CropName": "Pulses", "HarvestDate": "2023-10-08", "AreaHectares": 2038, "YieldTonnes": 949.0, "RainfallMM": 544}, {"RecordID": "CRP0009", "State": "Karnataka", "CropName": "Pulses", "HarvestDate": "2023-01-12", "AreaHectares": 1238, "YieldTonnes": 2944.7, "RainfallMM": 2139}, {"RecordID": "CRP0310", "State": "West Bengal", "CropName": "Cotton", "HarvestDate": "2023-09-17", "AreaHectares": 4807, "YieldTonnes": 1494.3, "RainfallMM": 1713}, {"RecordID": "CRP0284", "State": "Rajasthan", "CropName": "Maize", "HarvestDate": "2024-04-10", "AreaHectares": 356, "YieldTonnes": 153.2, "RainfallMM": 1668}, {"RecordID": "CRP0478", "State": "Delhi", "CropName": "Maize", "HarvestDate": "2024-03-06", "AreaHectares": 606, "YieldTonnes": 1568.6, "RainfallMM": 1759}, {"RecordID": "CRP0093", "State": "Rajasthan", "CropName": "Wheat", "HarvestDate": "2023-09-18", "AreaHectares": 1032, "YieldTonnes": 583.2, "RainfallMM": 1317}, {"RecordID": "CRP0253", "State": "Telangana", "CropName": "Sugarcane", "HarvestDate": "2024-07-27", "AreaHectares": 1522, "YieldTonnes": 1501.6, "RainfallMM": 1871}, {"RecordID": "CRP0033", "State": "Maharashtra", "CropName": "Cotton", "HarvestDate": "2023-02-26", "AreaHectares": 2710, "YieldTonnes": 2048.8, "RainfallMM": 1950}, {"RecordID": "CRP0136", "State": "Delhi", "CropName": "Rice", "HarvestDate": "2023-04-20", "AreaHectares": 4956, "YieldTonnes": 2392.0, "RainfallMM": 708}, {"RecordID": "CRP0023", "State": "Telangana", "CropName": "Cotton", "HarvestDate": "2024-12-14", "AreaHectares": 4697, "YieldTonnes": 8.0, "RainfallMM": 2189}, {"RecordID": "CRP0063", "State": "Maharashtra", "CropName": "Wheat", "HarvestDate": "2023-03-22", "AreaHectares": 3441, "YieldTonnes": 590.8, "RainfallMM": 1584}, {"RecordID": "CRP0490", "State": "Karnataka", "CropName": "Wheat", "HarvestDate": "2023-01-23", "AreaHectares": 1297, "YieldTonnes": 1652.2, "RainfallMM": 2351}, {"RecordID": "CRP0216", "State": "Punjab", "CropName": "Wheat", "HarvestDate": "2024-03-30", "AreaHectares": 3592, "YieldTonnes": 769.3, "RainfallMM": 1648}, {"RecordID": "CRP0420", "State": "West Bengal", "CropName": "Wheat", "HarvestDate": "2023-05-27", "AreaHectares": 1627, "YieldTonnes": 395.7, "RainfallMM": 609}, {"RecordID": "CRP0426", "State": "West Bengal", "CropName": "Cotton", "HarvestDate": "2024-06-03", "AreaHectares": 4850, "YieldTonnes": 2611.4, "RainfallMM": 647}, {"RecordID": "CRP0258", "State": "Gujarat", "CropName": "Wheat", "HarvestDate": "2024-10-21", "AreaHectares": 4048, "YieldTonnes": 1243.6, "RainfallMM": 1331}, {"RecordID": "CRP0053", "State": "Maharashtra", "CropName": "Rice", "HarvestDate": "2024-09-07", "AreaHectares": 4795, "YieldTonnes": 1539.4, "RainfallMM": 1097}, {"RecordID": "CRP0416", "State": "Maharashtra", "CropName": "Pulses", "HarvestDate": "2024-06-24", "AreaHectares": 4254, "YieldTonnes": 2752.6, "RainfallMM": 2057}, {"RecordID": "CRP0174", "State": "Karnataka", "CropName": "Cotton", "HarvestDate": "2024-12-08", "AreaHectares": 1165, "YieldTonnes": 1349.0, "RainfallMM": 1690}, {"RecordID": "CRP0036", "State": "Rajasthan", "CropName": "Wheat", "HarvestDate": "2023-03-28", "AreaHectares": 3312, "YieldTonnes": 664.6, "RainfallMM": 233}, {"RecordID": "CRP0179", "State": "Uttar Pradesh", "CropName": "Maize", "HarvestDate": "2023-05-05", "AreaHectares": 213, "YieldTonnes": 231.4, "RainfallMM": 591}, {"RecordID": "CRP0168", "State": "Tamil Nadu", "CropName": "Pulses", "HarvestDate": "2024-11-08", "AreaHectares": 2146, "YieldTonnes": 895.0, "RainfallMM": 697}, {"RecordID": "CRP0227", "State": "Telangana", "CropName": "Rice", "HarvestDate": "2023-06-10", "AreaHectares": 2425, "YieldTonnes": 1661.7, "RainfallMM": 1000}, {"RecordID": "CRP0121", "State": "Punjab", "CropName": "Sugarcane", "HarvestDate": "2023-03-03", "AreaHectares": 2164, "YieldTonnes": 2102.4, "RainfallMM": 1211}, {"RecordID": "CRP0276", "State": "Punjab", "CropName": "Sugarcane", "HarvestDate": "2023-09-12", "AreaHectares": 3856, "YieldTonnes": 1948.2, "RainfallMM": 2451}, {"RecordID": "CRP0045", "State": "Punjab", "CropName": "Maize", "HarvestDate": "2024-07-31", "AreaHectares": 4478, "YieldTonnes": 877.9, "RainfallMM": 2437}, {"RecordID": "CRP0301", "State": "Karnataka", "CropName": "Maize", "HarvestDate": "2024-09-17", "AreaHectares": 1362, "YieldTonnes": 57.8, "RainfallMM": 1735}, {"RecordID": "CRP0325", "State": "Karnataka", "CropName": "Cotton", "HarvestDate": "2023-12-30", "AreaHectares": 2131, "YieldTonnes": 59.2, "RainfallMM": 1914}, {"RecordID": "CRP0077", "State": "Rajasthan", "CropName": "Maize", "HarvestDate": "2023-10-06", "AreaHectares": 112, "YieldTonnes": 1017.3, "RainfallMM": 783}, {"RecordID": "CRP0209", "State": "Rajasthan", "CropName": "Wheat", "HarvestDate": "2024-07-09", "AreaHectares": 4463, "YieldTonnes": 202.2, "RainfallMM": 1655}, {"RecordID": "CRP0369", "State": "Tamil Nadu", "CropName": "Sugarcane", "HarvestDate": "2024-09-27", "AreaHectares": 73, "YieldTonnes": 726.9, "RainfallMM": 359}, {"RecordID": "CRP0213", "State": "West Bengal", "CropName": "Pulses", "HarvestDate": "2023-03-10", "AreaHectares": 4498, "YieldTonnes": 615.1, "RainfallMM": 532}, {"RecordID": "CRP0268", "State": "West Bengal", "CropName": "Maize", "HarvestDate": "2023-09-18", "AreaHectares": 682, "YieldTonnes": 2890.8, "RainfallMM": 2394}, {"RecordID": "CRP0312", "State": "Punjab", "CropName": "Sugarcane", "HarvestDate": "2023-12-17", "AreaHectares": 2778, "YieldTonnes": 1822.5, "RainfallMM": 718}, {"RecordID": "CRP0217", "State": "Gujarat", "CropName": "Pulses", "HarvestDate": "2024-10-09", "AreaHectares": 2210, "YieldTonnes": 1803.7, "RainfallMM": 1521}, {"RecordID": "CRP0440", "State": "Delhi", "CropName": "Pulses", "HarvestDate": "2024-05-15", "AreaHectares": 4494, "YieldTonnes": 1741.0, "RainfallMM": 763}, {"RecordID": "CRP0010", "State": "Tamil Nadu", "CropName": "Sugarcane", "HarvestDate": "2024-07-04", "AreaHectares": 2420, "YieldTonnes": 2445.0, "RainfallMM": 250}, {"RecordID": "CRP0409", "State": "Punjab", "CropName": "Sugarcane", "HarvestDate": "2023-01-11", "AreaHectares": 205, "YieldTonnes": 50.6, "RainfallMM": 683}, {"RecordID": "CRP0428", "State": "Punjab", "CropName": "Rice", "HarvestDate": "2024-05-24", "AreaHectares": 4159, "YieldTonnes": 1594.3, "RainfallMM": 1852}, {"RecordID": "CRP0286", "State": "Karnataka", "CropName": "Maize", "HarvestDate": "2024-03-09", "AreaHectares": 4238, "YieldTonnes": 2287.1, "RainfallMM": 1773}, {"RecordID": "CRP0296", "State": "Gujarat", "CropName": "Sugarcane", "HarvestDate": "2024-03-11", "AreaHectares": 4395, "YieldTonnes": 977.3, "RainfallMM": 2157}, {"RecordID": "CRP0105", "State": "Gujarat", "CropName": "Wheat", "HarvestDate": "2023-06-24", "AreaHectares": 3501, "YieldTonnes": 2711.1, "RainfallMM": 725}, {"RecordID": "CRP0313", "State": "Gujarat", "CropName": "Pulses", "HarvestDate": "2024-08-13", "AreaHectares": 2417, "YieldTonnes": 2425.9, "RainfallMM": 1095}, {"RecordID": "CRP0439", "State": "Gujarat", "CropName": "Pulses", "HarvestDate": "2024-02-24", "AreaHectares": 2832, "YieldTonnes": 1067.6, "RainfallMM": 1463}, {"RecordID": "CRP0500", "State": "Karnataka", "CropName": "Maize", "HarvestDate": "2024-02-02", "AreaHectares": 1469, "YieldTonnes": 2549.9, "RainfallMM": 1179}, {"RecordID": "CRP0092", "State": "Telangana", "CropName": "Wheat", "HarvestDate": "2024-02-27", "AreaHectares": 1861, "YieldTonnes": 2326.6, "RainfallMM": 2206}, {"RecordID": "CRP0183", "State": "Telangana", "CropName": "Pulses", "HarvestDate": "2024-04-28", "AreaHectares": 451, "YieldTonnes": 1889.5, "RainfallMM": 2436}, {"RecordID": "CRP0316", "State": "Telangana", "CropName": "Rice", "HarvestDate": "2024-09-17", "AreaHectares": 2856, "YieldTonnes": 2587.6, "RainfallMM": 2481}, {"RecordID": "CRP0461", "State": "Delhi", "CropName": "Sugarcane", "HarvestDate": "2024-05-08", "AreaHectares": 904, "YieldTonnes": 2469.7, "RainfallMM": 292}, {"RecordID": "CRP0173", "State": "Delhi", "CropName": "Maize", "HarvestDate": "2023-02-10", "AreaHectares": 1781, "YieldTonnes": 2055.6, "RainfallMM": 616}, {"RecordID": "CRP0233", "State": "Karnataka", "CropName": "Maize", "HarvestDate": "2023-09-30", "AreaHectares": 1726, "YieldTonnes": 321.7, "RainfallMM": 864}, {"RecordID": "CRP0483", "State": "Karnataka", "CropName": "Pulses", "HarvestDate": "2023-04-25", "AreaHectares": 328, "YieldTonnes": 263.5, "RainfallMM": 1726}, {"RecordID": "CRP0037", "State": "Telangana", "CropName": "Sugarcane", "HarvestDate": "2024-01-14", "AreaHectares": 813, "YieldTonnes": 1998.3, "RainfallMM": 1066}, {"RecordID": "CRP0157", "State": "Maharashtra", "CropName": "Maize", "HarvestDate": "2024-03-25", "AreaHectares": 2575, "YieldTonnes": 685.5, "RainfallMM": 512}, {"RecordID": "CRP0003", "State": "Maharashtra", "CropName": "Maize", "HarvestDate": "2023-01-24", "AreaHectares": 2557, "YieldTonnes": 842.3, "RainfallMM": 327}, {"RecordID": "CRP0243", "State": "Maharashtra", "CropName": "Wheat", "HarvestDate": "2024-02-15", "AreaHectares": 2757, "YieldTonnes": 2102.7, "RainfallMM": 883}, {"RecordID": "CRP0309", "State": "Telangana", "CropName": "Pulses", "HarvestDate": "2024-01-25", "AreaHectares": 4903, "YieldTonnes": 1535.2, "RainfallMM": 565}, {"RecordID": "CRP0290", "State": "Tamil Nadu", "CropName": "Rice", "HarvestDate": "2024-04-02", "AreaHectares": 2228, "YieldTonnes": 78.2, "RainfallMM": 1382}, {"RecordID": "CRP0049", "State": "Punjab", "CropName": "Rice", "HarvestDate": "2024-05-10", "AreaHectares": 40, "YieldTonnes": 646.9, "RainfallMM": 1609}, {"RecordID": "CRP0415", "State": "Gujarat", "CropName": "Cotton", "HarvestDate": "2023-05-14", "AreaHectares": 541, "YieldTonnes": 1887.8, "RainfallMM": 2220}, {"RecordID": "CRP0142", "State": "Maharashtra", "CropName": "Maize", "HarvestDate": "2024-01-17", "AreaHectares": 2348, "YieldTonnes": 562.4, "RainfallMM": 539}, {"RecordID": "CRP0224", "State": "Tamil Nadu", "CropName": "Wheat", "HarvestDate": "2024-12-30", "AreaHectares": 1983, "YieldTonnes": 1178.2, "RainfallMM": 1257}, {"RecordID": "CRP0353", "State": "Gujarat", "CropName": "Rice", "HarvestDate": "2024-04-06", "AreaHectares": 4933, "YieldTonnes": 485.6, "RainfallMM": 1220}, {"RecordID": "CRP0184", "State": "Karnataka", "CropName": "Maize", "HarvestDate": "2023-03-01", "AreaHectares": 1325, "YieldTonnes": 1432.0, "RainfallMM": 594}, {"RecordID": "CRP0332", "State": "Karnataka", "CropName": "Rice", "HarvestDate": "2024-10-05", "AreaHectares": 3360, "YieldTonnes": 1625.5, "RainfallMM": 859}, {"RecordID": "CRP0479", "State": "West Bengal", "CropName": "Pulses", "HarvestDate": "2023-10-22", "AreaHectares": 2518, "YieldTonnes": 586.3, "RainfallMM": 1298}, {"RecordID": "CRP0430", "State": "Telangana", "CropName": "Sugarcane", "HarvestDate": "2024-07-22", "AreaHectares": 3571, "YieldTonnes": 2130.8, "RainfallMM": 1886}, {"RecordID": "CRP0161", "State": "Maharashtra", "CropName": "Wheat", "HarvestDate": "2023-03-14", "AreaHectares": 3877, "YieldTonnes": 1453.0, "RainfallMM": 1164}, {"RecordID": "CRP0337", "State": "Maharashtra", "CropName": "Cotton", "HarvestDate": "2024-08-28", "AreaHectares": 4085, "YieldTonnes": 2417.7, "RainfallMM": 1053}, {"RecordID": "CRP0401", "State": "West Bengal", "CropName": "Sugarcane", "HarvestDate": "2023-07-08", "AreaHectares": 4831, "YieldTonnes": 522.7, "RainfallMM": 1525}, {"RecordID": "CRP0220", "State": "West Bengal", "CropName": "Rice", "HarvestDate": "2024-11-30", "AreaHectares": 993, "YieldTonnes": 1013.5, "RainfallMM": 600}, {"RecordID": "CRP0100", "State": "West Bengal", "CropName": "Wheat", "HarvestDate": "2023-08-05", "AreaHectares": 212, "YieldTonnes": 2254.5, "RainfallMM": 2446}, {"RecordID": "CRP0381", "State": "West Bengal", "CropName": "Cotton", "HarvestDate": "2024-05-17", "AreaHectares": 2778, "YieldTonnes": 2983.7, "RainfallMM": 1436}, {"RecordID": "CRP0236", "State": "West Bengal", "CropName": "Pulses", "HarvestDate": "2024-08-12", "AreaHectares": 1473, "YieldTonnes": 2749.2, "RainfallMM": 2247}, {"RecordID": "CRP0452", "State": "West Bengal", "CropName": "Maize", "HarvestDate": "2023-06-26", "AreaHectares": 4996, "YieldTonnes": 2393.3, "RainfallMM": 469}, {"RecordID": "CRP0118", "State": "Rajasthan", "CropName": "Wheat", "HarvestDate": "2023-11-20", "AreaHectares": 3542, "YieldTonnes": 617.4, "RainfallMM": 874}, {"RecordID": "CRP0342", "State": "Karnataka", "CropName": "Maize", "HarvestDate": "2023-02-17", "AreaHectares": 2505, "YieldTonnes": 1404.9, "RainfallMM": 1717}, {"RecordID": "CRP0002", "State": "Delhi", "CropName": "Rice", "HarvestDate": "2024-09-11", "AreaHectares": 974, "YieldTonnes": 700.8, "RainfallMM": 2217}, {"RecordID": "CRP0114", "State": "Rajasthan", "CropName": "Pulses", "HarvestDate": "2023-10-16", "AreaHectares": 2911, "YieldTonnes": 2993.7, "RainfallMM": 1370}, {"RecordID": "CRP0464", "State": "Karnataka", "CropName": "Wheat", "HarvestDate": "2023-04-16", "AreaHectares": 298, "YieldTonnes": 842.2, "RainfallMM": 2241}, {"RecordID": "CRP0175", "State": "West Bengal", "CropName": "Cotton", "HarvestDate": "2023-08-23", "AreaHectares": 2798, "YieldTonnes": 2589.8, "RainfallMM": 1705}, {"RecordID": "CRP0254", "State": "Gujarat", "CropName": "Rice", "HarvestDate": "2024-05-30", "AreaHectares": 679, "YieldTonnes": 1587.9, "RainfallMM": 2013}, {"RecordID": "CRP0446", "State": "Rajasthan", "CropName": "Maize", "HarvestDate": "2024-04-20", "AreaHectares": 3051, "YieldTonnes": 2726.9, "RainfallMM": 2482}, {"RecordID": "CRP0048", "State": "Uttar Pradesh", "CropName": "Cotton", "HarvestDate": "2023-04-30", "AreaHectares": 4862, "YieldTonnes": 2372.5, "RainfallMM": 1373}, {"RecordID": "CRP0185", "State": "Rajasthan", "CropName": "Wheat", "HarvestDate": "2023-06-16", "AreaHectares": 4047, "YieldTonnes": 379.0, "RainfallMM": 861}, {"RecordID": "CRP0166", "State": "Karnataka", "CropName": "Maize", "HarvestDate": "2024-05-07", "AreaHectares": 1138, "YieldTonnes": 1754.1, "RainfallMM": 1608}, {"RecordID": "CRP0373", "State": "Tamil Nadu", "CropName": "Cotton", "HarvestDate": "2023-11-25", "AreaHectares": 4037, "YieldTonnes": 2389.1, "RainfallMM": 998}, {"RecordID": "CRP0275", "State": "Uttar Pradesh", "CropName": "Rice", "HarvestDate": "2023-11-26", "AreaHectares": 3904, "YieldTonnes": 1567.0, "RainfallMM": 502}, {"RecordID": "CRP0193", "State": "Rajasthan", "CropName": "Maize", "HarvestDate": "2023-10-27", "AreaHectares": 2972, "YieldTonnes": 1287.6, "RainfallMM": 1256}, {"RecordID": "CRP0001", "State": "Uttar Pradesh", "CropName": "Pulses", "HarvestDate": "2024-11-08", "AreaHectares": 2630, "YieldTonnes": 2989.8, "RainfallMM": 1211}, {"RecordID": "CRP0055", "State": "Delhi", "CropName": "Cotton", "HarvestDate": "2024-11-26", "AreaHectares": 466, "YieldTonnes": 2254.9, "RainfallMM": 1061}, {"RecordID": "CRP0376", "State": "Maharashtra", "CropName": "Pulses", "HarvestDate": "2023-05-16", "AreaHectares": 941, "YieldTonnes": 2864.5, "RainfallMM": 1670}, {"RecordID": "CRP0029", "State": "Telangana", "CropName": "Wheat", "HarvestDate": "2023-07-09", "AreaHectares": 930, "YieldTonnes": 811.5, "RainfallMM": 1109}, {"RecordID": "CRP0207", "State": "Gujarat", "CropName": "Wheat", "HarvestDate": "2023-03-28", "AreaHectares": 2672, "YieldTonnes": 1145.0, "RainfallMM": 1103}, {"RecordID": "CRP0384", "State": "West Bengal", "CropName": "Rice", "HarvestDate": "2024-07-16", "AreaHectares": 552, "YieldTonnes": 1086.5, "RainfallMM": 1253}, {"RecordID": "CRP0494", "State": "Tamil Nadu", "CropName": "Pulses", "HarvestDate": "2023-12-18", "AreaHectares": 1475, "YieldTonnes": 65.4, "RainfallMM": 2044}, {"RecordID": "CRP0050", "State": "Maharashtra", "CropName": "Sugarcane", "HarvestDate": "2024-10-23", "AreaHectares": 1815, "YieldTonnes": 1035.4, "RainfallMM": 2032}, {"RecordID": "CRP0351", "State": "Punjab", "CropName": "Rice", "HarvestDate": "2023-02-04", "AreaHectares": 302, "YieldTonnes": 2914.3, "RainfallMM": 955}, {"RecordID": "CRP0021", "State": "Delhi", "CropName": "Pulses", "HarvestDate": "2024-12-21", "AreaHectares": 4408, "YieldTonnes": 1159.3, "RainfallMM": 1501}, {"RecordID": "CRP0294", "State": "Uttar Pradesh", "CropName": "Wheat", "HarvestDate": "2024-04-13", "AreaHectares": 503, "YieldTonnes": 1171.6, "RainfallMM": 1776}, {"RecordID": "CRP0177", "State": "Tamil Nadu", "CropName": "Pulses", "HarvestDate": "2024-12-18", "AreaHectares": 3509, "YieldTonnes": 1414.7, "RainfallMM": 2400}, {"RecordID": "CRP0336", "State": "Karnataka", "CropName": "Rice", "HarvestDate": "2023-08-06", "AreaHectares": 4567, "YieldTonnes": 1079.7, "RainfallMM": 2336}, {"RecordID": "CRP0380", "State": "Tamil Nadu", "CropName": "Rice", "HarvestDate": "2023-08-10", "AreaHectares": 371, "YieldTonnes": 631.2, "RainfallMM": 1992}, {"RecordID": "CRP0034", "State": "West Bengal", "CropName": "Sugarcane", "HarvestDate": "2024-10-13", "AreaHectares": 1015, "YieldTonnes": 2536.5, "RainfallMM": 1071}, {"RecordID": "CRP0172", "State": "Delhi", "CropName": "Rice", "HarvestDate": "2024-10-02", "AreaHectares": 2521, "YieldTonnes": 1607.0, "RainfallMM": 2481}, {"RecordID": "CRP0008", "State": "Maharashtra", "CropName": "Maize", "HarvestDate": "2023-11-25", "AreaHectares": 2442, "YieldTonnes": 2797.4, "RainfallMM": 340}, {"RecordID": "CRP0319", "State": "Rajasthan", "CropName": "Wheat", "HarvestDate": "2024-04-04", "AreaHectares": 1447, "YieldTonnes": 219.9, "RainfallMM": 668}, {"RecordID": "CRP0107", "State": "Gujarat", "CropName": "Cotton", "HarvestDate": "2024-02-21", "AreaHectares": 2337, "YieldTonnes": 2262.0, "RainfallMM": 2078}, {"RecordID": "CRP0414", "State": "West Bengal", "CropName": "Cotton", "HarvestDate": "2024-04-26", "AreaHectares": 18, "YieldTonnes": 815.3, "RainfallMM": 1058}, {"RecordID": "CRP0098", "State": "Delhi", "CropName": "Sugarcane", "HarvestDate": "2024-01-30", "AreaHectares": 4442, "YieldTonnes": 2158.1, "RainfallMM": 552}, {"RecordID": "CRP0111", "State": "Uttar Pradesh", "CropName": "Wheat", "HarvestDate": "2024-08-17", "AreaHectares": 813, "YieldTonnes": 217.3, "RainfallMM": 2083}, {"RecordID": "CRP0361", "State": "Gujarat", "CropName": "Maize", "HarvestDate": "2024-03-12", "AreaHectares": 3438, "YieldTonnes": 2577.8, "RainfallMM": 2334}, {"RecordID": "CRP0070", "State": "Telangana", "CropName": "Maize", "HarvestDate": "2024-02-01", "AreaHectares": 3748, "YieldTonnes": 2640.0, "RainfallMM": 1934}, {"RecordID": "CRP0347", "State": "Telangana", "CropName": "Maize", "HarvestDate": "2024-05-03", "AreaHectares": 681, "YieldTonnes": 2037.2, "RainfallMM": 2054}, {"RecordID": "CRP0436", "State": "Karnataka", "CropName": "Wheat", "HarvestDate": "2024-02-17", "AreaHectares": 3603, "YieldTonnes": 2615.0, "RainfallMM": 755}, {"RecordID": "CRP0130", "State": "Delhi", "CropName": "Sugarcane", "HarvestDate": "2024-01-15", "AreaHectares": 1816, "YieldTonnes": 67.2, "RainfallMM": 1506}, {"RecordID": "CRP0317", "State": "Uttar Pradesh", "CropName": "Rice", "HarvestDate": "2023-08-04", "AreaHectares": 3321, "YieldTonnes": 1030.9, "RainfallMM": 1029}, {"RecordID": "CRP0448", "State": "Punjab", "CropName": "Rice", "HarvestDate": "2024-11-28", "AreaHectares": 4389, "YieldTonnes": 811.1, "RainfallMM": 1226}, {"RecordID": "CRP0259", "State": "Delhi", "CropName": "Maize", "HarvestDate": "2024-05-03", "AreaHectares": 4032, "YieldTonnes": 1124.2, "RainfallMM": 664}, {"RecordID": "CRP0323", "State": "Telangana", "CropName": "Cotton", "HarvestDate": "2023-01-16", "AreaHectares": 491, "YieldTonnes": 2315.3, "RainfallMM": 577}, {"RecordID": "CRP0151", "State": "Telangana", "CropName": "Rice", "HarvestDate": "2023-01-24", "AreaHectares": 4213, "YieldTonnes": 1525.7, "RainfallMM": 730}, {"RecordID": "CRP0475", "State": "Gujarat", "CropName": "Sugarcane", "HarvestDate": "2023-10-12", "AreaHectares": 1779, "YieldTonnes": 2632.2, "RainfallMM": 1908}, {"RecordID": "CRP0338", "State": "Rajasthan", "CropName": "Wheat", "HarvestDate": "2024-10-29", "AreaHectares": 4903, "YieldTonnes": 1497.7, "RainfallMM": 706}, {"RecordID": "CRP0027", "State": "Punjab", "CropName": "Sugarcane", "HarvestDate": "2023-09-27", "AreaHectares": 4885, "YieldTonnes": 2159.2, "RainfallMM": 1193}, {"RecordID": "CRP0399", "State": "Uttar Pradesh", "CropName": "Pulses", "HarvestDate": "2024-12-07", "AreaHectares": 2067, "YieldTonnes": 2296.9, "RainfallMM": 955}, {"RecordID": "CRP0424", "State": "Delhi", "CropName": "Rice", "HarvestDate": "2023-12-01", "AreaHectares": 4025, "YieldTonnes": 966.0, "RainfallMM": 1800}, {"RecordID": "CRP0094", "State": "Punjab", "CropName": "Rice", "HarvestDate": "2024-01-03", "AreaHectares": 3140, "YieldTonnes": 1689.2, "RainfallMM": 2347}, {"RecordID": "CRP0429", "State": "Gujarat", "CropName": "Wheat", "HarvestDate": "2023-03-03", "AreaHectares": 4080, "YieldTonnes": 311.8, "RainfallMM": 1497}, {"RecordID": "CRP0149", "State": "Gujarat", "CropName": "Sugarcane", "HarvestDate": "2023-12-04", "AreaHectares": 2212, "YieldTonnes": 305.0, "RainfallMM": 1942}, {"RecordID": "CRP0481", "State": "Rajasthan", "CropName": "Rice", "HarvestDate": "2024-03-03", "AreaHectares": 4579, "YieldTonnes": 2709.4, "RainfallMM": 1775}, {"RecordID": "CRP0423", "State": "Delhi", "CropName": "Pulses", "HarvestDate": "2024-08-08", "AreaHectares": 4311, "YieldTonnes": 1298.9, "RainfallMM": 1354}, {"RecordID": "CRP0120", "State": "Telangana", "CropName": "Wheat", "HarvestDate": "2024-03-08", "AreaHectares": 1553, "YieldTonnes": 1640.3, "RainfallMM": 2361}, {"RecordID": "CRP0406", "State": "Gujarat", "CropName": "Maize", "HarvestDate": "2024-08-01", "AreaHectares": 598, "YieldTonnes": 1729.4, "RainfallMM": 1580}, {"RecordID": "CRP0139", "State": "Karnataka", "CropName": "Pulses", "HarvestDate": "2023-07-01", "AreaHectares": 1064, "YieldTonnes": 1576.9, "RainfallMM": 975}, {"RecordID": "CRP0170", "State": "West Bengal", "CropName": "Wheat", "HarvestDate": "2023-07-13", "AreaHectares": 1299, "YieldTonnes": 2075.1, "RainfallMM": 661}, {"RecordID": "CRP0364", "State": "West Bengal", "CropName": "Wheat", "HarvestDate": "2023-09-20", "AreaHectares": 728, "YieldTonnes": 477.1, "RainfallMM": 307}, {"RecordID": "CRP0203", "State": "Karnataka", "CropName": "Pulses", "HarvestDate": "2023-07-04", "AreaHectares": 3070, "YieldTonnes": 1511.6, "RainfallMM": 1508}, {"RecordID": "CRP0148", "State": "Karnataka", "CropName": "Wheat", "HarvestDate": "2024-08-02", "AreaHectares": 2944, "YieldTonnes": 1249.7, "RainfallMM": 1828}, {"RecordID": "CRP0278", "State": "West Bengal", "CropName": "Maize", "HarvestDate": "2023-06-01", "AreaHectares": 1204, "YieldTonnes": 2145.7, "RainfallMM": 1983}, {"RecordID": "CRP0257", "State": "Rajasthan", "CropName": "Cotton", "HarvestDate": "2023-01-19", "AreaHectares": 1060, "YieldTonnes": 1136.0, "RainfallMM": 747}, {"RecordID": "CRP0457", "State": "Telangana", "CropName": "Rice", "HarvestDate": "2024-12-09", "AreaHectares": 842, "YieldTonnes": 507.3, "RainfallMM": 1239}, {"RecordID": "CRP0441", "State": "Tamil Nadu", "CropName": "Wheat", "HarvestDate": "2024-09-16", "AreaHectares": 483, "YieldTonnes": 2201.7, "RainfallMM": 992}, {"RecordID": "CRP0132", "State": "Punjab", "CropName": "Pulses", "HarvestDate": "2024-06-03", "AreaHectares": 666, "YieldTonnes": 2238.7, "RainfallMM": 581}, {"RecordID": "CRP0250", "State": "Punjab", "CropName": "Maize", "HarvestDate": "2024-05-15", "AreaHectares": 3074, "YieldTonnes": 1537.0, "RainfallMM": 513}, {"RecordID": "CRP0153", "State": "Punjab", "CropName": "Pulses", "HarvestDate": "2023-09-04", "AreaHectares": 3952, "YieldTonnes": 1768.5, "RainfallMM": 2320}, {"RecordID": "CRP0363", "State": "Maharashtra", "CropName": "Rice", "HarvestDate": "2023-10-16", "AreaHectares": 4959, "YieldTonnes": 137.2, "RainfallMM": 1659}]</script>
+<script>
+(function(){
+  const DATA = JSON.parse(document.getElementById('raw-data').textContent);
+
+  const CROP_COLORS = {
+    Wheat:'#B4860B', Rice:'#445E39', Maize:'#C9A227',
+    Cotton:'#5C71A0', Sugarcane:'#8C4A2F', Pulses:'#2F4374'
+  };
+  const CROPS = [...new Set(DATA.map(d=>d.CropName))].sort();
+  const STATES = [...new Set(DATA.map(d=>d.State))].sort();
+  const YEARS = [...new Set(DATA.map(d=>d.HarvestDate.slice(0,4)))].sort();
+  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // ---------------- Filter state ----------------
+  let activeCrops = new Set(CROPS);
+  let activeState = '__all__';
+  let activeYears = new Set(YEARS);
+  let sortKey = 'HarvestDate', sortDir = -1;
+  let searchTerm = '';
+  let page = 0;
+  const PAGE_SIZE = 20;
+
+  function filtered(){
+    return DATA.filter(d =>
+      activeCrops.has(d.CropName) &&
+      (activeState === '__all__' || d.State === activeState) &&
+      activeYears.has(d.HarvestDate.slice(0,4))
+    );
+  }
+
+  // ---------------- Build filter controls ----------------
+  const cropChipsEl = document.getElementById('cropChips');
+  CROPS.forEach(crop => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = crop; b.dataset.active = 'true';
+    b.style.borderColor = CROP_COLORS[crop];
+    b.addEventListener('click', () => {
+      if (activeCrops.has(crop)) activeCrops.delete(crop); else activeCrops.add(crop);
+      b.dataset.active = activeCrops.has(crop);
+      refreshAll();
+    });
+    cropChipsEl.appendChild(b);
+  });
+
+  const stateSelect = document.getElementById('stateSelect');
+  STATES.forEach(s => {
+    const o = document.createElement('option'); o.value = s; o.textContent = s;
+    stateSelect.appendChild(o);
+  });
+  stateSelect.addEventListener('change', e => { activeState = e.target.value; refreshAll(); });
+
+  const yearChipsEl = document.getElementById('yearChips');
+  YEARS.forEach(y => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = y; b.dataset.active = 'true';
+    b.addEventListener('click', () => {
+      if (activeYears.has(y)) activeYears.delete(y); else activeYears.add(y);
+      b.dataset.active = activeYears.has(y);
+      refreshAll();
+    });
+    yearChipsEl.appendChild(b);
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    activeCrops = new Set(CROPS); activeState = '__all__'; activeYears = new Set(YEARS);
+    stateSelect.value = '__all__';
+    cropChipsEl.querySelectorAll('.chip').forEach(b=>b.dataset.active='true');
+    yearChipsEl.querySelectorAll('.chip').forEach(b=>b.dataset.active='true');
+    refreshAll();
+  });
+
+  // ---------------- KPIs ----------------
+  function renderKPIs(rows){
+    const totalArea = rows.reduce((s,d)=>s+d.AreaHectares,0);
+    const totalYield = rows.reduce((s,d)=>s+d.YieldTonnes,0);
+    const avgRain = rows.length ? rows.reduce((s,d)=>s+d.RainfallMM,0)/rows.length : 0;
+    const kpis = [
+      {num: rows.length.toLocaleString(), lbl:'Ledger entries'},
+      {num: Math.round(totalArea).toLocaleString(), lbl:'Hectares sown'},
+      {num: Math.round(totalYield).toLocaleString(), lbl:'Tonnes yielded'},
+      {num: Math.round(avgRain).toLocaleString(), lbl:'Avg. rainfall (mm)'},
+      {num: new Set(rows.map(d=>d.State)).size, lbl:'States represented'},
+    ];
+    document.getElementById('kpiRow').innerHTML = kpis.map(k=>
+      `<div class="kpi"><span class="num">${k.num}</span><span class="lbl">${k.lbl}</span></div>`
+    ).join('');
+  }
+
+  // ---------------- Charts ----------------
+  let chartCrop, chartState, chartScatter, chartMonth;
+  const fontFamily = "'IBM Plex Mono', monospace";
+  Chart.defaults.font.family = fontFamily;
+  Chart.defaults.font.size = 11;
+  Chart.defaults.color = '#5B4E3A';
+
+  function buildCharts(rows){
+    // Crop totals
+    const cropTotals = {};
+    CROPS.forEach(c=>cropTotals[c]=0);
+    rows.forEach(d=>cropTotals[d.CropName]+=d.YieldTonnes);
+    const cropLabels = CROPS.filter(c=>activeCrops.has(c));
+    const cropData = cropLabels.map(c=>Math.round(cropTotals[c]));
+
+    // State avg yield/ha
+    const stateAgg = {};
+    rows.forEach(d=>{
+      if(!stateAgg[d.State]) stateAgg[d.State] = {y:0,a:0};
+      stateAgg[d.State].y += d.YieldTonnes;
+      stateAgg[d.State].a += d.AreaHectares;
+    });
+    const stateLabels = Object.keys(stateAgg).sort((a,b)=> (stateAgg[b].y/stateAgg[b].a) - (stateAgg[a].y/stateAgg[a].a));
+    const stateData = stateLabels.map(s=> +(stateAgg[s].y/stateAgg[s].a).toFixed(2));
+
+    // Scatter
+    const scatterSets = cropLabels.map(crop => ({
+      label: crop,
+      data: rows.filter(d=>d.CropName===crop).map(d=>({x:d.RainfallMM, y:d.YieldTonnes})),
+      backgroundColor: CROP_COLORS[crop] + 'CC',
+      pointRadius: 3,
+    }));
+
+    // Monthly volume by year
+    const monthYearCounts = {};
+    YEARS.forEach(y=>monthYearCounts[y]=Array(12).fill(0));
+    rows.forEach(d=>{
+      const y = d.HarvestDate.slice(0,4), m = +d.HarvestDate.slice(5,7)-1;
+      if(monthYearCounts[y]) monthYearCounts[y][m]++;
+    });
+    const monthDatasets = YEARS.filter(y=>activeYears.has(y)).map((y,i)=>({
+      label: y,
+      data: monthYearCounts[y],
+      borderColor: i===0 ? '#2F4374' : '#B4860B',
+      backgroundColor: 'transparent',
+      tension: 0.35,
+      pointRadius: 3,
+    }));
+
+    const gridColor = 'rgba(42,33,21,0.08)';
+
+    if(chartCrop) chartCrop.destroy();
+    chartCrop = new Chart(document.getElementById('chartCrop'), {
+      type:'bar',
+      data:{labels:cropLabels, datasets:[{data:cropData, backgroundColor:cropLabels.map(c=>CROP_COLORS[c])}]},
+      options:{responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{x:{grid:{display:false}}, y:{grid:{color:gridColor}, beginAtZero:true}}}
+    });
+
+    if(chartState) chartState.destroy();
+    chartState = new Chart(document.getElementById('chartState'), {
+      type:'bar',
+      data:{labels:stateLabels, datasets:[{data:stateData, backgroundColor:'#445E39'}]},
+      options:{responsive:true, maintainAspectRatio:false, indexAxis:'y',
+        plugins:{legend:{display:false}},
+        scales:{x:{grid:{color:gridColor}, beginAtZero:true}, y:{grid:{display:false}}}}
+    });
+
+    if(chartScatter) chartScatter.destroy();
+    chartScatter = new Chart(document.getElementById('chartScatter'), {
+      type:'scatter',
+      data:{datasets:scatterSets},
+      options:{responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom', labels:{boxWidth:8, padding:10}}},
+        scales:{
+          x:{title:{display:true,text:'Rainfall (mm)'}, grid:{color:gridColor}},
+          y:{title:{display:true,text:'Yield (t)'}, grid:{color:gridColor}}
+        }}
+    });
+
+    if(chartMonth) chartMonth.destroy();
+    chartMonth = new Chart(document.getElementById('chartMonth'), {
+      type:'line',
+      data:{labels:MONTH_NAMES, datasets:monthDatasets},
+      options:{responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom', labels:{boxWidth:8,padding:10}}},
+        scales:{x:{grid:{display:false}}, y:{grid:{color:gridColor}, beginAtZero:true}}}
+    });
+  }
+
+  // ---------------- Harvest calendar ----------------
+  function renderCalendar(rows){
+    const counts = {};
+    CROPS.forEach(c=>{counts[c]=Array(12).fill(0);});
+    rows.forEach(d=>{
+      const m = +d.HarvestDate.slice(5,7)-1;
+      counts[d.CropName][m]++;
+    });
+    const max = Math.max(1, ...CROPS.flatMap(c=>counts[c]));
+    let html = '<thead><tr><th>Crop</th>' + MONTH_NAMES.map(m=>`<th>${m}</th>`).join('') + '</tr></thead><tbody>';
+    CROPS.forEach(crop=>{
+      html += `<tr><th style="color:${CROP_COLORS[crop]}">${crop}</th>`;
+      counts[crop].forEach(n=>{
+        const h = Math.round((n/max)*36) + (n>0?4:0);
+        html += `<td><div class="tally"><div class="tally-bar" style="height:${h}px; --crop-color:${CROP_COLORS[crop]}"></div></div><span class="tally-count">${n||''}</span></td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody>';
+    document.getElementById('calendarTable').innerHTML = html;
+  }
+
+  // ---------------- Data table ----------------
+  function renderTable(rows){
+    let out = rows.slice();
+    if(searchTerm){
+      const t = searchTerm.toLowerCase();
+      out = out.filter(d => d.RecordID.toLowerCase().includes(t) || d.State.toLowerCase().includes(t) || d.CropName.toLowerCase().includes(t));
+    }
+    out.sort((a,b)=>{
+      let av=a[sortKey], bv=b[sortKey];
+      if(typeof av === 'string') return av.localeCompare(bv) * sortDir;
+      return (av-bv) * sortDir;
+    });
+
+    document.getElementById('rowCount').textContent = `${out.length.toLocaleString()} rows`;
+    const totalPages = Math.max(1, Math.ceil(out.length / PAGE_SIZE));
+    if(page >= totalPages) page = totalPages - 1;
+    if(page < 0) page = 0;
+    const pageRows = out.slice(page*PAGE_SIZE, page*PAGE_SIZE + PAGE_SIZE);
+
+    document.getElementById('tableBody').innerHTML = pageRows.map(d => `
+      <tr>
+        <td>${d.RecordID}</td>
+        <td>${d.State}</td>
+        <td><span class="crop-swatch" style="background:${CROP_COLORS[d.CropName]}"></span>${d.CropName}</td>
+        <td>${d.HarvestDate}</td>
+        <td>${d.AreaHectares.toLocaleString()}</td>
+        <td>${d.YieldTonnes.toFixed(1)}</td>
+        <td>${d.RainfallMM.toLocaleString()}</td>
+      </tr>`).join('');
+
+    document.getElementById('pageLabel').textContent = `Page ${page+1} of ${totalPages}`;
+    document.getElementById('prevPage').disabled = page === 0;
+    document.getElementById('nextPage').disabled = page >= totalPages - 1;
+  }
+
+  document.querySelectorAll('table.data thead th').forEach(th=>{
+    th.addEventListener('click', ()=>{
+      const key = th.dataset.key;
+      if(sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; }
+      document.querySelectorAll('table.data thead th .arrow').forEach(a=>a.textContent='');
+      th.querySelector('.arrow').textContent = sortDir === 1 ? ' ↑' : ' ↓';
+      page = 0;
+      renderTable(filtered());
+    });
+  });
+
+  document.getElementById('search').addEventListener('input', e=>{
+    searchTerm = e.target.value; page = 0; renderTable(filtered());
+  });
+  document.getElementById('prevPage').addEventListener('click', ()=>{ page--; renderTable(filtered()); });
+  document.getElementById('nextPage').addEventListener('click', ()=>{ page++; renderTable(filtered()); });
+
+  // ---------------- Refresh everything ----------------
+  function refreshAll(){
+    const rows = filtered();
+    renderKPIs(rows);
+    buildCharts(rows);
+    renderCalendar(rows);
+    page = 0;
+    renderTable(rows);
+  }
+
+  refreshAll();
+})();
+</script>
+</body>
+</html>
