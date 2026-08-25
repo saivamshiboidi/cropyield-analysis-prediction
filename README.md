@@ -4,7 +4,7 @@ Interactive analytics for India's crop harvest data — built as a self-containe
 
 <p align="left">
   <img alt="records" src="https://img.shields.io/badge/records-502-B4860B">
-  <img alt="states" src="https://img.shields.io/badge/states-11-445E39">
+  <img alt="states" src="https://img.shields.io/badge/states-12-445E39">
   <img alt="crops" src="https://img.shields.io/badge/crops-6-2F4374">
   <img alt="years" src="https://img.shields.io/badge/seasons-2023--2024-8C4A2F">
   <img alt="license" src="https://img.shields.io/badge/license-MIT-lightgrey">
