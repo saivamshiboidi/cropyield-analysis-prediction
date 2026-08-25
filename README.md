@@ -76,6 +76,9 @@ The dataset is embedded directly in the file, so it also works offline and can b
 - **Vanilla JavaScript** for filtering, sorting, and search — no framework or build step
 - **Power BI** for the desktop-report alternative
 
+## Live Demo: 
+**Here**: https://harvest-map-zeta.vercel.app/
+
 ## Roadmap
 
 - [ ] Add district-level granularity
